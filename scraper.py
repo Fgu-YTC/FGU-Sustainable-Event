@@ -1,10 +1,9 @@
 """
 永續活動爬蟲：
 1. 從「最新消息」「研討會」「永續活動標籤頁」收集候選網址
-2. 合併上次 events.json／種子網址
+2. 合併上次 events.json／種子網址（避免列表暫未顯示的文章漏抓）
 3. 內頁需有「永續活動」標籤才收錄
-4. 列表顯示日：優先抓內文「活動時間」；找不到再退回官網發佈日
-   （因活動需提前宣傳，發佈日 ≠ 活動日）
+4. 從內文解析活動日、時間（含多場次）、地點 → 寫入 events.json
 
 本機：python scraper.py
 """
@@ -43,7 +42,6 @@ REQUEST_TIMEOUT = 30
 DELAY_SECONDS = 0.4
 MAX_PAGES = 20
 
-# 已知有標籤、但可能暫時不在列表的文章（可再補）
 SEED_URLS = [
     "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/"
     "%F0%9F%8C%B1-ESG%E5%9F%B9%E5%8A%9B%E8%AA%B2%E7%A8%8B-"
@@ -66,6 +64,13 @@ MONTH_LABELS = {
     12: "十二月",
 }
 
+TIME_RANGE_RE = re.compile(
+    r"(\d{1,2}:\d{2})\s*[-–—~〜～至到]\s*(?:上午|下午|中午)?\s*(\d{1,2}:\d{2})"
+    r"(?:\s*[（(][^）\n)]{0,40}[）)])?"
+)
+CLOCK_RE = re.compile(r"\d{1,2}:\d{2}")
+SESSION_RE = re.compile(r"【第\s*(\d+)\s*場】\s*([^\n]+)")
+
 
 def get_soup(url: str) -> BeautifulSoup:
     response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
@@ -75,7 +80,6 @@ def get_soup(url: str) -> BeautifulSoup:
 
 
 def normalize_link(url: str) -> str:
-    """統一成 zh_tw 路徑，去掉 query／fragment。"""
     url = (url or "").strip()
     if not url:
         return ""
@@ -112,45 +116,143 @@ def parse_date_parts(date_str: str) -> tuple[str, str, str]:
     )
 
 
+def _valid_iso(y: int, mo: int, d: int) -> str | None:
+    if not (2000 <= y <= 2100 and 1 <= mo <= 12 and 1 <= d <= 31):
+        return None
+    return f"{y:04d}-{mo:02d}-{d:02d}"
+
+
+def _iso_from_roc(y: int, mo: int, d: int) -> str | None:
+    if y < 1911:
+        y += 1911
+    return _valid_iso(y, mo, d)
+
+
 def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
     """
-    回傳 (活動日, 來源說明)。
-    提前宣傳時官網日期常是發文日，故優先從內文抓活動時間。
+    回傳 (活動日, 來源)。優先內文活動時間，找不到再用發佈日。
+    注意：不可把「2026年5月13日」誤拆成民國 26 年（→1937）。
     """
     text = content_text or ""
     post = (post_date or "").strip()
 
-    # 民國年：115 年 9 月 23 日
-    m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
-    if m:
-        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        if y < 1911:
-            y += 1911
-        return f"{y:04d}-{mo:02d}-{d:02d}", "content_roc"
+    # 1) 西元完整：2026年5月13日 / 2026-05-13（可選前面有時間／日期標籤）
+    for pat, src in (
+        (
+            r"(?:時間|日期|活動時間|活動日期)[：:\s]*[^\n]{0,40}?"
+            r"(?<!\d)(\d{4})\s*[年/-]\s*(\d{1,2})\s*[月/-]\s*(\d{1,2})",
+            "content_ymd_labeled",
+        ),
+        (
+            r"(?<!\d)(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日",
+            "content_ymd",
+        ),
+    ):
+        m = re.search(pat, text)
+        if m:
+            iso = _valid_iso(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            if iso:
+                return iso, src
 
-    # 西元：時間／日期：2026-09-23 或 2026/09/23
+    # 2) 民國年：115 年 9 月 23 日（(?<!\d) 避免吃到 2026 的尾數）
     m = re.search(
-        r"(?:時間|日期|活動時間|活動日期)[：:\s]*"
-        r"(\d{4})\s*[年/-]\s*(\d{1,2})\s*[月/-]\s*(\d{1,2})",
+        r"(?<!\d)(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日",
         text,
     )
     if m:
-        return (
-            f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}",
-            "content_ymd",
-        )
+        iso = _iso_from_roc(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        if iso:
+            return iso, "content_roc"
 
-    # 多場次取第一場：【第 1 場】9/8
+    # 3) 多場次取第一場：【第 1 場】9/8
     m = re.search(r"【第\s*1\s*場】\s*(\d{1,2})\s*/\s*(\d{1,2})", text)
     if m:
         year_m = re.match(r"^(\d{4})", post)
-        year = year_m.group(1) if year_m else "2026"
-        return (
-            f"{year}-{int(m.group(1)):02d}-{int(m.group(2)):02d}",
-            "content_session1",
-        )
+        year = int(year_m.group(1)) if year_m else 2026
+        iso = _valid_iso(year, int(m.group(1)), int(m.group(2)))
+        if iso:
+            return iso, "content_session1"
 
+    if re.match(r"^\d{4}-\d{2}-\d{2}", post):
+        return post[:10], "post_date"
     return post, "post_date"
+
+
+def extract_time(content_text: str) -> str:
+    """解析活動時間；多場次則分行列出每一場。"""
+    text = content_text or ""
+
+    sessions = SESSION_RE.findall(text)
+    if len(sessions) >= 2:
+        lines: list[str] = []
+        for num, rest in sessions:
+            rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
+            rest = re.sub(r"\s+", " ", rest)
+            if CLOCK_RE.search(rest):
+                lines.append(f"第{num}場 {rest}")
+        if lines:
+            return "\n".join(lines)
+
+    labeled = re.search(
+        r"(?:⏰\s*)?(?:時間|活動時間)\s*[：:]\s*([^\n]{0,160})",
+        text,
+    )
+    chunk = labeled.group(1) if labeled else ""
+
+    for source in (chunk, text):
+        if not source:
+            continue
+        m = TIME_RANGE_RE.search(source)
+        if m:
+            raw = m.group(0)
+            # 正規化「12:10 - 下午14:10」→「12:10 - 14:10」
+            raw = re.sub(r"([-–—~〜～至到]\s*)(?:上午|下午|中午)\s*", r"\1", raw)
+            note = ""
+            # 進場說明可能在下一行
+            if "開放進場" not in raw:
+                nm = re.search(
+                    r"[（(]\s*\d{1,2}:\d{2}\s*開放進場\s*[）)]",
+                    text[m.end() : m.end() + 80],
+                )
+                if nm:
+                    note = nm.group(0)
+            out = re.sub(r"\s+", " ", raw + note).strip()
+            return out
+
+    if chunk:
+        m = re.search(
+            r"(\d{1,2}:\d{2})(?:\s*[（(][^）\n)]{0,40}[）)])?",
+            chunk,
+        )
+        if m:
+            out = re.sub(r"\s+", " ", m.group(0)).strip()
+            if "開放進場" not in out:
+                nm = re.search(
+                    r"[（(]\s*\d{1,2}:\d{2}\s*開放進場\s*[）)]",
+                    text,
+                )
+                if nm:
+                    out = f"{out}{nm.group(0)}"
+            return out
+
+    return ""
+
+
+def extract_location(content_text: str) -> str:
+    text = content_text or ""
+    # 必須有冒號，避免「時程與地點」誤判
+    m = re.search(r"(?:📍\s*)?地點\s*[：:]\s*\n?\s*([^\n]+)", text)
+    if not m:
+        return ""
+    loc = m.group(1).strip()
+    loc = re.sub(r"^[：:\s•📍]+", "", loc)
+    if CLOCK_RE.match(loc) or loc.startswith("（") or loc.startswith("("):
+        return ""
+    loc = re.split(r"[（(]\s*\d{1,2}:\d{2}", loc, maxsplit=1)[0].strip()
+    loc = re.sub(r"\s+", " ", loc)
+    if len(loc) > 60:
+        loc = loc[:60].rstrip()
+    return loc
 
 
 def discover_max_page(soup: BeautifulSoup) -> int:
@@ -171,7 +273,6 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
         href = link_el.get("href", "")
         if "/announcement/" not in href:
             continue
-        # 只要文章頁（路徑最後有內容 slug），略過純列表
         path = urlsplit(urljoin(BASE_URL, href)).path.rstrip("/")
         if path.endswith("/News") or path.endswith("/Seminar"):
             continue
@@ -279,8 +380,8 @@ def page_has_sustainability_tag(soup: BeautifulSoup) -> bool:
     return False
 
 
-def extract_detail_meta(soup: BeautifulSoup) -> tuple[str, str, str, str, str]:
-    """title, date, content_html, content_text, image"""
+def extract_detail_meta(soup: BeautifulSoup) -> tuple[str, str, str]:
+    """title, post_date, content_text"""
     title_el = soup.select_one("h3")
     title = title_el.get_text(strip=True) if title_el else ""
 
@@ -288,16 +389,8 @@ def extract_detail_meta(soup: BeautifulSoup) -> tuple[str, str, str, str, str]:
     date = date_el.get_text(strip=True) if date_el else ""
 
     body = soup.select_one("div.s-annc__post-body")
-    content_html = str(body) if body else ""
     content_text = body.get_text("\n", strip=True) if body else ""
-
-    image = ""
-    if body:
-        img = body.select_one("img[src]")
-        if img and img.get("src"):
-            image = urljoin(BASE_URL, img["src"])
-
-    return title, date, content_html, content_text, image
+    return title, date, content_text
 
 
 def fetch_sustainability_events() -> list[dict]:
@@ -319,34 +412,29 @@ def fetch_sustainability_events() -> list[dict]:
             print("      → 無「永續活動」標籤")
             continue
 
-        title, post_date, content_html, content_text, image = extract_detail_meta(
-            soup
-        )
+        title, post_date, content_text = extract_detail_meta(soup)
         post_date = post_date or row.get("date") or ""
         event_date, date_source = extract_event_date(content_text, post_date)
         date_display, month_label, day = parse_date_parts(event_date)
+        event_time = extract_time(content_text)
+        location = extract_location(content_text)
         final_title = title or row.get("title") or "（無標題）"
         print(
-            f"      → 符合，活動日={date_display}（{date_source}），發佈日={post_date or '—'}"
+            f"      → 符合，日={date_display}（{date_source}），"
+            f"時={event_time[:40] or '—'}，地={location or '—'}"
         )
 
         events.append(
             {
                 "title": final_title,
                 "date": date_display,
-                "date_display": date_display,
-                "post_date": post_date,
-                "date_source": date_source,
                 "month_label": month_label,
                 "day": day,
+                "time": event_time,
+                "location": location,
                 "link": link,
-                "image": image,
-                "detail_raw": f"日期：{date_display}" if date_display else "",
-                "content_html": content_html,
-                "content_text": content_text,
-                "source": "fgu_sdgs",
-                "source_url": NEWS_URL,
-                "matched_tag": REQUIRED_TAG,
+                "post_date": post_date,
+                "date_source": date_source,
             }
         )
 
