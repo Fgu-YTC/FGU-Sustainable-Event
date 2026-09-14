@@ -526,8 +526,9 @@
   <main class="container">
     <div class="admin-only admin-bar" id="adminBar">
       <strong>日期管理</strong>
-      <span class="hint">僅在此 GitHub Pages 可改；佛光嵌入頁看不到。儲存會更新 overrides.json。</span>
+      <span class="hint">僅此後台可操作；佛光嵌入頁看不到。可改日期、重新撈取活動。</span>
       <button type="button" id="tokenBtn">設定 GitHub Token</button>
+      <button type="button" id="rescrapeBtn">重新撈取活動</button>
       <button type="button" id="downloadBtn">下載 overrides.json</button>
       <button type="button" class="primary" id="saveGithubBtn">儲存到 GitHub</button>
       <p class="admin-msg" id="adminMsg" hidden></p>
@@ -589,6 +590,7 @@
     const GH_OWNER = "Fgu-YTC";
     const GH_REPO = "SDGSACTIVITY";
     const GH_FILE = "overrides.json";
+    const GH_WORKFLOW = "scrape-and-deploy.yml";
     const GH_BRANCH = "main";
     const TOKEN_KEY = "sdgs_activity_gh_token";
 
@@ -841,7 +843,7 @@
     function askToken() {
       const current = getToken();
       const next = window.prompt(
-        "請貼上 GitHub Personal Access Token（需 repo 權限）。只存在此瀏覽器分頁，不會送到佛光網站。",
+        "請貼上 GitHub Personal Access Token（需 repo + workflow 權限）。只存在此瀏覽器分頁，不會送到佛光網站。",
         current
       );
       if (next === null) return getToken();
@@ -854,6 +856,47 @@
 
     function utf8ToBase64(str) {
       return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    async function rescrapeActivities() {
+      const token = getToken() || askToken();
+      if (!token) {
+        setAdminMsg("未設定 Token，無法觸發爬蟲。", true);
+        return;
+      }
+
+      const btn = document.getElementById("rescrapeBtn");
+      btn.disabled = true;
+      setAdminMsg("正在觸發重新撈取…");
+
+      const url =
+        "https://api.github.com/repos/" +
+        GH_OWNER + "/" + GH_REPO +
+        "/actions/workflows/" + GH_WORKFLOW + "/dispatches";
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: "Bearer " + token,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ref: GH_BRANCH }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error("觸發失敗 HTTP " + res.status + " " + errText.slice(0, 180));
+        }
+        setAdminMsg(
+          "已開始重新撈取。約 1～2 分鐘後按 F5 重新整理本頁；佛光嵌入頁也會同步更新。"
+        );
+      } catch (err) {
+        setAdminMsg(String(err.message || err), true);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     async function saveToGithub() {
@@ -972,6 +1015,7 @@
           updateEventDate(input.getAttribute("data-id"), input.value);
         });
         document.getElementById("tokenBtn").addEventListener("click", askToken);
+        document.getElementById("rescrapeBtn").addEventListener("click", rescrapeActivities);
         document.getElementById("downloadBtn").addEventListener("click", downloadOverrides);
         document.getElementById("saveGithubBtn").addEventListener("click", saveToGithub);
       }
