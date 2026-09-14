@@ -414,7 +414,7 @@
 
     function detailText(ev) {
       const lines = [];
-      if (ev.date) lines.push("日期：" + ev.date);
+      // 日期已在左側色塊顯示，內文不再重複
       if (ev.time) {
         const t = String(ev.time);
         lines.push(t.indexOf("\n") >= 0 ? "時間：\n" + t : "時間：" + t);
