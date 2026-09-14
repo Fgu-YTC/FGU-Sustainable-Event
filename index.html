@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>永續活動</title>
+  <title>研討會與活動</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
@@ -54,24 +54,64 @@
       min-height: 100px;
       padding: 0 1.25rem;
     }
-    .page-title .col-title { flex: 0 0 25%; max-width: 25%; }
-    .page-title .col-filter { flex: 0 0 75%; max-width: 75%; position: relative; min-height: 50px; }
+    .page-title .col-title { flex: 0 0 28%; max-width: 28%; }
+    .page-title .col-filter {
+      flex: 0 0 72%;
+      max-width: 72%;
+      position: relative;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-right: 24px;
+    }
     .page-title h4 {
       margin: 0;
       text-align: center;
-      font-size: 1.6em;
+      font-size: 1.45em;
       font-weight: 700;
       letter-spacing: 0.06em;
     }
     .page-title .tablink {
       position: absolute;
       right: 0; bottom: 0;
-      width: 75%; height: 100%;
+      width: 72%; height: 100%;
       background: var(--sky);
       border-radius: 0 50em 50em 0;
       z-index: 1;
       pointer-events: none;
     }
+
+    .seg-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 50em;
+      padding: 4px;
+      position: relative;
+      z-index: 3;
+    }
+    .seg-tabs button {
+      font-family: inherit;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      padding: 8px 18px;
+      border-radius: 50em;
+      font-size: 0.95rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .seg-tabs button.active {
+      background: #fff;
+      color: var(--indigo);
+      font-weight: 700;
+    }
+
     html.is-embed .page-title {
       background: transparent;
       color: var(--dark);
@@ -83,26 +123,35 @@
     html.is-embed .page-title .row {
       min-height: 0;
       padding: 0;
-      justify-content: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem;
     }
     html.is-embed .page-title .col-title,
     html.is-embed .page-title .tablink { display: none; }
     html.is-embed .page-title .col-filter {
-      flex: 0 0 auto;
+      flex: 1 1 auto;
       max-width: none;
       min-height: 0;
+      justify-content: space-between;
+      padding-right: 0;
+      width: 100%;
+    }
+    html.is-embed .seg-tabs {
+      background: var(--babyblue);
+    }
+    html.is-embed .seg-tabs button { color: var(--dark); }
+    html.is-embed .seg-tabs button.active {
+      background: var(--indigo);
+      color: #fff;
     }
 
     .dropdown {
-      position: absolute;
+      position: relative;
       z-index: 3;
-      right: 50px;
-      top: calc(50% - 25px);
       min-width: 140px;
       text-align: center;
       display: inline-block;
     }
-    html.is-embed .dropdown { position: relative; right: auto; top: auto; }
     .dropbtn {
       font-family: inherit;
       border: 1px solid var(--dark);
@@ -125,6 +174,7 @@
       max-height: 280px;
       overflow: auto;
       margin-top: 4px;
+      text-align: left;
     }
     .dropdown:hover .dropdown-content,
     .dropdown.open .dropdown-content { display: block; }
@@ -229,6 +279,13 @@
     }
     html.is-embed .status { margin-left: 100px; margin-right: 0; }
 
+    @media (max-width: 900px) {
+      .page-title .col-title,
+      .page-title .col-filter { flex: none; max-width: 100%; width: 100%; }
+      .page-title .col-filter { justify-content: flex-start; padding-right: 0; }
+      .page-title .tablink { display: none; }
+      .page-title h4 { text-align: left; }
+    }
     @media (max-width: 768px) {
       .page-title {
         padding: 15px 20px;
@@ -236,11 +293,7 @@
         margin-top: 0;
       }
       .page-title .row { flex-direction: column; align-items: flex-start; gap: 0.75rem; min-height: auto; }
-      .page-title .col-title,
-      .page-title .col-filter { flex: none; max-width: 100%; width: 100%; }
-      .page-title h4 { text-align: left; font-size: 1.35em; }
-      .page-title .tablink { display: none; }
-      .dropdown { position: relative; right: auto; top: auto; }
+      .page-title h4 { font-size: 1.3em; }
       .act-list ul { display: block; margin: 0; }
       .act-list li {
         width: calc(100% - 100px);
@@ -250,6 +303,8 @@
       .pagenation { margin: 30px 0 40px; }
     }
     @media (max-width: 520px) {
+      .seg-tabs { width: 100%; }
+      .seg-tabs button { flex: 1; padding: 8px 10px; font-size: 0.88rem; }
       .act-list li { margin-left: 72px; width: calc(100% - 72px); padding: 16px; }
       .act-list li .date { width: 72px; left: -72px; font-size: 1em; }
       .status { margin-left: 72px; }
@@ -260,8 +315,12 @@
   <main class="container">
     <section class="page-title indigo xdot">
       <div class="row">
-        <div class="col-title"><h4>永續活動</h4></div>
+        <div class="col-title"><h4>研討會與活動</h4></div>
         <div class="col-filter">
+          <div class="seg-tabs" role="tablist" aria-label="活動分類">
+            <button type="button" role="tab" id="tabComing" class="active" aria-selected="true" data-tab="coming">Coming Soon</button>
+            <button type="button" role="tab" id="tabPast" aria-selected="false" data-tab="past">歷年活動</button>
+          </div>
           <div class="dropdown" id="monthDropdown">
             <button type="button" class="dropbtn" id="monthBtn">全部月份</button>
             <div class="dropdown-content" id="monthMenu"></div>
@@ -294,8 +353,15 @@
   </main>
 
   <script>
-    // 資料由爬蟲寫入 events.json（無後台）；排程每天自動更新
-    const state = { all: [], filtered: [], month: "all", rows: 10, page: 1 };
+    const state = {
+      all: [],
+      tabPool: [],
+      filtered: [],
+      tab: "coming",
+      month: "all",
+      rows: 10,
+      page: 1,
+    };
     const IS_EMBED = document.documentElement.classList.contains("is-embed");
 
     function escapeHtml(str) {
@@ -306,9 +372,44 @@
         .replace(/"/g, "&quot;");
     }
 
+    function todayKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
     function ymKey(ev) {
       const m = String(ev.date || "").match(/^(\d{4})-(\d{2})/);
       return m ? m[1] + "-" + m[2] : "";
+    }
+
+    /** 活動結束日：多場次取最後一場，否則用主日期 */
+    function eventEndDate(ev) {
+      const base = String(ev.date || "");
+      const yearM = base.match(/^(\d{4})/);
+      const year = yearM ? yearM[1] : String(new Date().getFullYear());
+      let latest = base;
+
+      const time = String(ev.time || "");
+      const re = /(\d{1,2})\s*\/\s*(\d{1,2})/g;
+      let m;
+      while ((m = re.exec(time))) {
+        const iso =
+          year +
+          "-" +
+          String(Number(m[1])).padStart(2, "0") +
+          "-" +
+          String(Number(m[2])).padStart(2, "0");
+        if (!latest || iso > latest) latest = iso;
+      }
+      return latest || "";
+    }
+
+    function isComing(ev) {
+      const end = eventEndDate(ev);
+      return !!end && end >= todayKey();
     }
 
     function detailText(ev) {
@@ -316,7 +417,6 @@
       if (ev.date) lines.push("日期：" + ev.date);
       if (ev.time) {
         const t = String(ev.time);
-        // 多場次用換行逐列顯示，例如三階段工作坊
         lines.push(t.indexOf("\n") >= 0 ? "時間：\n" + t : "時間：" + t);
       }
       if (ev.location) lines.push("地點：" + ev.location);
@@ -332,21 +432,59 @@
       window.parent.postMessage({ source: "sdgs-activity", type: "resize", height: h }, "*");
     }
 
+    function buildTabPool() {
+      const coming = state.all.filter(isComing).slice().sort(function (a, b) {
+        return String(a.date).localeCompare(String(b.date));
+      });
+      const past = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(function (a, b) {
+        return String(b.date).localeCompare(String(a.date));
+      });
+      state.tabPool = state.tab === "coming" ? coming : past;
+    }
+
     function buildMonthMenu() {
-      const keys = Array.from(new Set(state.all.map(ymKey).filter(Boolean))).sort().reverse();
-      document.getElementById("monthMenu").innerHTML =
-        '<a href="#" data-month="all" class="active">全部月份</a>' +
+      const keys = Array.from(new Set(state.tabPool.map(ymKey).filter(Boolean))).sort().reverse();
+      const menu = document.getElementById("monthMenu");
+      menu.innerHTML =
+        '<a href="#" data-month="all"' + (state.month === "all" ? ' class="active"' : "") + ">全部月份</a>" +
         keys.map(function (k) {
-          return '<a href="#" data-month="' + k + '">' + k + "</a>";
+          return (
+            '<a href="#" data-month="' + k + '"' +
+            (state.month === k ? ' class="active"' : "") + ">" + k + "</a>"
+          );
         }).join("");
+
+      if (state.month !== "all" && keys.indexOf(state.month) < 0) {
+        state.month = "all";
+        document.getElementById("monthBtn").textContent = "全部月份";
+      }
     }
 
     function applyFilter() {
+      buildTabPool();
+      buildMonthMenu();
       state.filtered = state.month === "all"
-        ? state.all.slice()
-        : state.all.filter(function (ev) { return ymKey(ev) === state.month; });
+        ? state.tabPool.slice()
+        : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
       state.page = 1;
       renderList();
+    }
+
+    function setTab(tab) {
+      state.tab = tab === "past" ? "past" : "coming";
+      state.month = "all";
+      document.getElementById("monthBtn").textContent = "全部月份";
+      document.querySelectorAll(".seg-tabs button").forEach(function (btn) {
+        const on = btn.getAttribute("data-tab") === state.tab;
+        btn.classList.toggle("active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      applyFilter();
+    }
+
+    function emptyMessage() {
+      if (state.tab === "coming") return "目前沒有即將舉辦的活動";
+      return "此條件下沒有歷年活動資料";
     }
 
     function renderList() {
@@ -356,7 +494,7 @@
       if (state.page > pages) state.page = pages;
 
       if (!state.filtered.length) {
-        root.innerHTML = '<div class="status">此條件下沒有活動資料</div>';
+        root.innerHTML = '<div class="status">' + emptyMessage() + "</div>";
         pager.hidden = true;
         notifyParentHeight();
         return;
@@ -386,6 +524,12 @@
       });
     }
 
+    document.querySelector(".seg-tabs").addEventListener("click", function (e) {
+      const btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      setTab(btn.getAttribute("data-tab"));
+    });
+
     document.getElementById("monthMenu").addEventListener("click", function (e) {
       const a = e.target.closest("a[data-month]");
       if (!a) return;
@@ -396,7 +540,11 @@
       this.querySelectorAll("a").forEach(function (el) {
         el.classList.toggle("active", el === a);
       });
-      applyFilter();
+      state.filtered = state.month === "all"
+        ? state.tabPool.slice()
+        : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
+      state.page = 1;
+      renderList();
     });
 
     document.getElementById("rowsMenu").addEventListener("click", function (e) {
@@ -439,7 +587,6 @@
       })
       .then(function (data) {
         state.all = Array.isArray(data) ? data : [];
-        buildMonthMenu();
         applyFilter();
       })
       .catch(function () {
