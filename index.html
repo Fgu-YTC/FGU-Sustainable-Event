@@ -7,6 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
+  <script>
+    // 嵌入佛光官網 iframe 時啟用精簡模式
+    if (new URLSearchParams(location.search).get("embed") === "1") {
+      document.documentElement.classList.add("is-embed");
+    }
+  </script>
   <style>
     :root {
       --indigo: #313A9B;
@@ -25,6 +31,58 @@
       color: var(--dark);
       background: #fff;
       min-height: 100vh;
+    }
+
+    /* 嵌入官網：隱藏重複大標題，只留篩選與列表 */
+    html.is-embed body {
+      min-height: 0;
+      background: transparent;
+    }
+
+    html.is-embed .container {
+      width: 100%;
+      padding: 0.25rem 0 1rem;
+    }
+
+    html.is-embed .page-title {
+      background: transparent;
+      color: var(--dark);
+      border-radius: 0;
+      padding: 0;
+      margin: 0 0 1rem;
+      font-family: inherit;
+    }
+
+    html.is-embed .page-title .row {
+      min-height: 0;
+      padding: 0;
+      justify-content: flex-end;
+    }
+
+    html.is-embed .page-title .col-title,
+    html.is-embed .page-title .tablink {
+      display: none;
+    }
+
+    html.is-embed .page-title .col-filter {
+      flex: 0 0 auto;
+      max-width: none;
+      min-height: 0;
+    }
+
+    html.is-embed .page-title .dropdown {
+      position: relative;
+      right: auto;
+      top: auto;
+    }
+
+    html.is-embed .act-list ul {
+      margin: 0 2%;
+    }
+
+    html.is-embed .pagenation {
+      margin-left: 2%;
+      margin-right: 2%;
     }
 
     a { color: var(--dark); text-decoration: none; }
