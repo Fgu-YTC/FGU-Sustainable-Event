@@ -1,8 +1,8 @@
 """
 永續活動爬蟲：
-1. 從「最新消息」「研討會」「永續活動標籤頁」收集候選網址
+1. 從「最新消息」與「永續活動」標籤頁收集候選網址
 2. 合併上次 events.json／種子網址（避免列表暫未顯示的文章漏抓）
-3. 內頁需有「永續活動」標籤才收錄
+3. 內頁需有「永續活動」標籤才收錄（不抓研討會分類）
 4. 從內文解析活動日、時間（含多場次）、地點 → 寫入 events.json
 
 本機：python scraper.py
@@ -21,7 +21,6 @@ from bs4 import BeautifulSoup
 
 BASE_URL = "https://sdgs.fgu.edu.tw"
 NEWS_URL = f"{BASE_URL}/zh_tw/announcement/News"
-SEMINAR_URL = f"{BASE_URL}/zh_tw/announcement/Seminar"
 TAG_URL = (
     f"{BASE_URL}/zh_tw/announcement/News"
     f"?tags%5B%5D=6aa249da434ade0ee2b15128"
@@ -344,14 +343,13 @@ def collect_candidates() -> list[dict]:
     by_key: dict[str, dict] = {}
     for chunk in (
         collect_from_list(NEWS_URL, "最新消息"),
-        collect_from_list(SEMINAR_URL, "研討會"),
         collect_from_tag_page(),
         collect_from_previous(),
         collect_from_seeds(),
     ):
         by_key.update(chunk)
     items = list(by_key.values())
-    print(f"候選去重後共 {len(items)} 筆，開始檢查內頁標籤…")
+    print(f"候選去重後共 {len(items)} 筆，開始檢查「{REQUIRED_TAG}」標籤…")
     return items
 
 
