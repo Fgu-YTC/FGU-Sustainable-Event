@@ -83,8 +83,9 @@ def clean_time_text(value: str) -> str:
 def get_soup(url: str) -> BeautifulSoup:
     response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
-    response.encoding = response.apparent_encoding or "utf-8"
-    return BeautifulSoup(response.text, "html.parser")
+    # 官網為 UTF-8；勿用 apparent_encoding（Actions 上易誤判成亂碼）
+    response.encoding = "utf-8"
+    return BeautifulSoup(response.content, "html.parser", from_encoding="utf-8")
 
 
 def normalize_link(url: str) -> str:

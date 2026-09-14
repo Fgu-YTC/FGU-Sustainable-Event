@@ -41,9 +41,16 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Scrape events
+        env:
+          PYTHONIOENCODING: utf-8
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
         run: python scraper.py
 
       - name: Commit updated events.json
+        env:
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
