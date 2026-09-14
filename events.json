@@ -1,5 +1,29 @@
 [
   {
+    "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！（第3場）",
+    "date": "2026-09-30",
+    "month_label": "九月",
+    "day": "30",
+    "time": "12:00 - 15:00",
+    "location": "雲起樓 406 會議室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%94%A5-USR-%E8%A8%88%E7%95%AB%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%A4%A7%E5%8D%87%E7%B4%9A-SROI-%E5%AF%A6%E9%AB%94%E5%B7%A5%E4%BD%9C%E5%9D%8A%E9%87%8D%E7%A3%85%E7%99%BB%E5%A0%B4-61923572",
+    "post_date": "2026-09-01",
+    "date_source": "content_session",
+    "session": 3
+  },
+  {
+    "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！（第2場）",
+    "date": "2026-09-24",
+    "month_label": "九月",
+    "day": "24",
+    "time": "09:00 - 12:00",
+    "location": "雲起樓 406 會議室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%94%A5-USR-%E8%A8%88%E7%95%AB%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%A4%A7%E5%8D%87%E7%B4%9A-SROI-%E5%AF%A6%E9%AB%94%E5%B7%A5%E4%BD%9C%E5%9D%8A%E9%87%8D%E7%A3%85%E7%99%BB%E5%A0%B4-61923572",
+    "post_date": "2026-09-01",
+    "date_source": "content_session",
+    "session": 2
+  },
+  {
     "title": "🌱【ESG培力課程】永續報告書實戰解析：從合規到特色展現",
     "date": "2026-09-23",
     "month_label": "九月",
@@ -11,15 +35,16 @@
     "date_source": "content_roc"
   },
   {
-    "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！",
+    "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！（第1場）",
     "date": "2026-09-08",
     "month_label": "九月",
     "day": "08",
-    "time": "第1場 9/8 (二) 09:00 - 12:00\n第2場 9/24 (四) 09:00 - 12:00\n第3場 9/30 (三) 12:00 - 15:00",
+    "time": "09:00 - 12:00",
     "location": "雲起樓 406 會議室",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%94%A5-USR-%E8%A8%88%E7%95%AB%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%A4%A7%E5%8D%87%E7%B4%9A-SROI-%E5%AF%A6%E9%AB%94%E5%B7%A5%E4%BD%9C%E5%9D%8A%E9%87%8D%E7%A3%85%E7%99%BB%E5%A0%B4-61923572",
     "post_date": "2026-09-01",
-    "date_source": "content_session1"
+    "date_source": "content_session",
+    "session": 1
   },
   {
     "title": "📢【高CP值培力】萬元級國際認證課免費聽！SROI 社會影響力實務講座",

@@ -187,8 +187,69 @@ def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
     return post, "post_date"
 
 
+def parse_sessions(content_text: str, fallback_year: str) -> list[dict]:
+    """多場次工作坊：拆成第1場、第2場…各自日期與時間。"""
+    text = content_text or ""
+    raw_sessions = SESSION_RE.findall(text)
+    if len(raw_sessions) < 2:
+        return []
+
+    year_m = re.match(r"^(\d{4})", (fallback_year or "").strip())
+    year = int(year_m.group(1)) if year_m else 2026
+    parsed: list[dict] = []
+
+    for num, rest in raw_sessions:
+        rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
+        rest = clean_time_text(rest)
+        dm = re.search(r"(\d{1,2})\s*/\s*(\d{1,2})", rest)
+        tm = TIME_RANGE_RE.search(rest)
+        if not dm or not tm:
+            continue
+        iso = _valid_iso(year, int(dm.group(1)), int(dm.group(2)))
+        if not iso:
+            continue
+        date_display, month_label, day = parse_date_parts(iso)
+        parsed.append(
+            {
+                "session": int(num),
+                "date": date_display,
+                "month_label": month_label,
+                "day": day,
+                "time": f"{tm.group(1)} - {tm.group(2)}",
+            }
+        )
+    return parsed
+
+
+def expand_multi_session(event: dict, content_text: str) -> list[dict]:
+    sessions = parse_sessions(
+        content_text,
+        event.get("date") or event.get("post_date") or "",
+    )
+    if not sessions:
+        return [event]
+
+    base_title = re.sub(r"（第\d+場）$", "", event.get("title") or "")
+    expanded: list[dict] = []
+    for s in sessions:
+        item = dict(event)
+        item.update(
+            {
+                "title": f"{base_title}（第{s['session']}場）",
+                "date": s["date"],
+                "month_label": s["month_label"],
+                "day": s["day"],
+                "time": s["time"],
+                "session": s["session"],
+                "date_source": "content_session",
+            }
+        )
+        expanded.append(item)
+    return expanded
+
+
 def extract_time(content_text: str) -> str:
-    """解析活動時間；多場次則分行列出每一場。不含開放進場說明。"""
+    """解析活動時間；單場次活動用。多場次改由 expand_multi_session 拆項。"""
     text = content_text or ""
 
     sessions = SESSION_RE.findall(text)
@@ -408,19 +469,21 @@ def fetch_sustainability_events() -> list[dict]:
             f"時={event_time[:40] or '—'}，地={location or '—'}"
         )
 
-        events.append(
-            {
-                "title": final_title,
-                "date": date_display,
-                "month_label": month_label,
-                "day": day,
-                "time": event_time,
-                "location": location,
-                "link": link,
-                "post_date": post_date,
-                "date_source": date_source,
-            }
-        )
+        base_event = {
+            "title": final_title,
+            "date": date_display,
+            "month_label": month_label,
+            "day": day,
+            "time": event_time,
+            "location": location,
+            "link": link,
+            "post_date": post_date,
+            "date_source": date_source,
+        }
+        expanded = expand_multi_session(base_event, content_text)
+        if len(expanded) > 1:
+            print(f"      → 拆成 {len(expanded)} 場次")
+        events.extend(expanded)
 
     events.sort(key=lambda e: e.get("date") or "", reverse=True)
     return events
