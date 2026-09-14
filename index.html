@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>永續活動｜本機預覽</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --indigo: #313A9B;
+      --blue: #10BEF6;
+      --sky: #2D7CC5;
+      --babyblue: #DBF5FE;
+      --dark: #403a39;
+      --org: #ff4b00;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: var(--dark);
+      background: #fff;
+      min-height: 100vh;
+    }
+
+    a { color: var(--dark); text-decoration: none; }
+    a:hover { color: var(--indigo); }
+
+    .container {
+      width: min(1140px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.5rem 0 3rem;
+    }
+
+    /* 標題區：仿 FICHET page-title.indigo */
+    .page-title {
+      color: #fff;
+      background: var(--indigo);
+      border-radius: 0 50em 50em 50em;
+      font-family: "Noto Serif TC", serif;
+      padding: 30px 0;
+      position: relative;
+      margin: 30px 0 50px;
+    }
+
+    .page-title .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      min-height: 100px;
+      padding: 0 1.25rem;
+    }
+
+    .page-title .col-title {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+
+    .page-title .col-filter {
+      flex: 0 0 75%;
+      max-width: 75%;
+      position: relative;
+      min-height: 50px;
+    }
+
+    .page-title h4 {
+      margin: 0;
+      text-align: center;
+      font-size: 1.6em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .page-title .source {
+      margin: 0.4rem 0 0;
+      text-align: center;
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.78rem;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    .page-title .tablink {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 75%;
+      height: 100%;
+      background: var(--sky);
+      border-radius: 0 50em 50em 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* 月份下拉 */
+    .dropdown {
+      position: absolute;
+      z-index: 3;
+      right: 50px;
+      top: calc(50% - 25px);
+      min-width: 140px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .dropbtn {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      border: 1px solid var(--dark);
+      padding: 10px 48px 10px 24px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403a39' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") 92% center no-repeat;
+      border-radius: 50em;
+      width: 100%;
+      display: block;
+      cursor: pointer;
+      color: var(--dark);
+      font-size: 0.95rem;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      width: 100%;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 5;
+      max-height: 280px;
+      overflow: auto;
+      margin-top: 4px;
+    }
+
+    .dropdown:hover .dropdown-content,
+    .dropdown.open .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-content a {
+      color: #000;
+      padding: 8px 16px;
+      background: #fff;
+      display: block;
+      font-family: "Noto Sans TC", sans-serif;
+      font-size: 0.92rem;
+    }
+
+    .dropdown-content a:first-child { border-radius: 20px 20px 0 0; }
+    .dropdown-content a:last-child { border-radius: 0 0 20px 20px; }
+    .dropdown-content a:hover,
+    .dropdown-content a.active {
+      background: var(--indigo);
+      color: #fff;
+    }
+
+    /* 活動列表：仿 FICHET act-list */
+    .act-list ul {
+      margin: 0 8%;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .act-list li {
+      background: var(--babyblue);
+      padding: 20px;
+      position: relative;
+      flex: 0 0 38%;
+      margin: 0 20px 20px 100px;
+      color: var(--dark);
+      animation: rise 0.45s ease both;
+    }
+
+    .act-list li:nth-child(2n) {
+      margin-right: 0;
+    }
+
+    .act-list li .date {
+      background: var(--blue);
+      color: #fff;
+      position: absolute;
+      width: 100px;
+      height: 100%;
+      left: -100px;
+      top: 0;
+      text-align: center;
+      font-size: 1.2em;
+      line-height: 1.4em;
+      border-radius: 0 0 0 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .act-list li .date .text {
+      display: block;
+      width: 100%;
+      padding: 0 6px;
+    }
+
+    .act-list h4 {
+      margin: 0 0 15px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .act-list h4 a {
+      color: var(--dark);
+    }
+
+    .act-list h4 a:hover {
+      color: var(--indigo);
+      text-decoration: underline;
+    }
+
+    .act-list p {
+      margin: 0;
+      line-height: 1.6em;
+      white-space: pre-line;
+      font-size: 0.95rem;
+    }
+
+    /* 分頁列 */
+    .pagenation {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin: 50px calc(8% + 20px) 40px 8%;
+    }
+
+    .pagenation .dropdown {
+      position: relative;
+      right: auto;
+      top: auto;
+      min-width: 140px;
+    }
+
+    .pagination {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      float: none;
+    }
+
+    .pagination li {
+      line-height: 1.4;
+      color: var(--dark);
+      font-size: 0.95rem;
+    }
+
+    .pagination button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--indigo);
+      font-size: 0.95rem;
+      padding: 6px 10px;
+      border-radius: 50em;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: var(--babyblue);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .status {
+      margin: 0 8% 0 calc(8% + 100px);
+      padding: 2.5rem 1rem;
+      text-align: center;
+      color: #5a6b78;
+      background: var(--babyblue);
+      border-radius: 0 0 0 30px;
+    }
+
+    .status.error {
+      background: #ffe8e4;
+      color: #8a2f22;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 992px) {
+      .act-list ul { margin: 0 2%; }
+      .act-list li { flex: 0 0 34%; }
+      .pagenation { margin-left: 2%; margin-right: 2%; }
+      .page-title .tablink { width: 70%; }
+    }
+
+    @media (max-width: 768px) {
+      .page-title {
+        padding: 15px 20px;
+        border-radius: 0 0 0 30px;
+        margin-top: 0;
+        width: 100%;
+      }
+
+      .page-title .row {
+        min-height: auto;
+        padding: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .page-title .col-title,
+      .page-title .col-filter {
+        flex: none;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .page-title h4 {
+        text-align: left;
+        font-size: 1.35em;
+      }
+
+      .page-title .source { text-align: left; }
+
+      .page-title .tablink { display: none; }
+
+      .dropdown {
+        position: relative;
+        right: auto;
+        top: auto;
+        min-width: 140px;
+      }
+
+      .act-list ul {
+        display: block;
+        margin: 0;
+      }
+
+      .act-list li {
+        width: calc(100% - 100px);
+        flex: none;
+        margin: 0 0 20px 100px;
+      }
+
+      .pagenation {
+        margin: 30px 0 40px;
+      }
+
+      .status {
+        margin-left: 100px;
+        margin-right: 0;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .act-list li {
+        margin-left: 72px;
+        width: calc(100% - 72px);
+        padding: 16px;
+      }
+
+      .act-list li .date {
+        width: 72px;
+        left: -72px;
+        font-size: 1em;
+      }
+
+      .status { margin-left: 72px; }
+
+      .dropbtn {
+        padding: 6px 40px 6px 16px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="page-title indigo xdot">
+      <div class="row">
+        <div class="col-title">
+          <h4>永續活動</h4>
+        </div>
+        <div class="col-filter">
+          <div class="dropdown" id="monthDropdown">
+            <button type="button" class="dropbtn" id="monthBtn">全部月份</button>
+            <div class="dropdown-content" id="monthMenu"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tablink sky" aria-hidden="true"></div>
+    </section>
+
+    <section class="act-list" id="root">
+      <div class="status">載入中…</div>
+    </section>
+
+    <div class="pagenation inside" id="pager" hidden>
+      <div class="dropdown" id="rowsDropdown">
+        <button type="button" class="dropbtn" id="rowsBtn">一頁10筆</button>
+        <div class="dropdown-content" id="rowsMenu">
+          <a href="#" data-rows="10">一頁10筆</a>
+          <a href="#" data-rows="15">一頁15筆</a>
+          <a href="#" data-rows="20">一頁20筆</a>
+          <a href="#" data-rows="30">一頁30筆</a>
+        </div>
+      </div>
+      <ul class="pagination">
+        <li id="pageInfo">1 / 1頁</li>
+        <li>
+          <button type="button" id="prevBtn" disabled>上一頁</button>
+        </li>
+        <li>
+          <button type="button" id="nextBtn" disabled>下一頁</button>
+        </li>
+      </ul>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      all: [],
+      filtered: [],
+      month: "all",
+      rows: 10,
+      page: 1,
+    };
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function ymKey(ev) {
+      const d = ev.date_display || ev.date || "";
+      const m = String(d).match(/^(\d{4})-(\d{1,2})/);
+      if (!m) return "";
+      return m[1] + "-" + String(m[2]).padStart(2, "0");
+    }
+
+    function detailText(ev) {
+      const date = ev.date_display || ev.date;
+      return date ? ("日期：" + date) : "";
+    }
+
+    function titleHtml(ev) {
+      const title = escapeHtml(ev.title || "（無標題）");
+      if (ev.link) {
+        return (
+          '<a href="' + escapeHtml(ev.link) +
+          '" target="_blank" rel="noopener noreferrer">' +
+          title + "</a>"
+        );
+      }
+      return title;
+    }
+
+    function buildMonthMenu() {
+      const keys = Array.from(
+        new Set(state.all.map(ymKey).filter(Boolean))
+      ).sort().reverse();
+
+      const menu = document.getElementById("monthMenu");
+      const items = ['<a href="#" data-month="all" class="active">全部月份</a>']
+        .concat(keys.map(function (k) {
+          return '<a href="#" data-month="' + k + '">' + k + "</a>";
+        }));
+      menu.innerHTML = items.join("");
+    }
+
+    function applyFilter() {
+      if (state.month === "all") {
+        state.filtered = state.all.slice();
+      } else {
+        state.filtered = state.all.filter(function (ev) {
+          return ymKey(ev) === state.month;
+        });
+      }
+      state.page = 1;
+      renderList();
+    }
+
+    function renderList() {
+      const root = document.getElementById("root");
+      const pager = document.getElementById("pager");
+      const total = state.filtered.length;
+      const pages = Math.max(1, Math.ceil(total / state.rows) || 1);
+
+      if (state.page > pages) state.page = pages;
+
+      if (!total) {
+        root.innerHTML = '<div class="status">此條件下沒有活動資料</div>';
+        pager.hidden = true;
+        return;
+      }
+
+      const start = (state.page - 1) * state.rows;
+      const slice = state.filtered.slice(start, start + state.rows);
+
+      const items = slice.map(function (ev, i) {
+        const month = escapeHtml(ev.month_label || "");
+        const day = escapeHtml(ev.day || "");
+        const detail = escapeHtml(detailText(ev));
+        const delay = Math.min(i * 0.04, 0.35);
+        return (
+          '<li style="animation-delay:' + delay + 's">' +
+            '<div class="date"><div class="text">' + month + "<br>" + day + "</div></div>" +
+            "<h4>" + titleHtml(ev) + "</h4>" +
+            "<p>" + detail + "</p>" +
+          "</li>"
+        );
+      }).join("");
+
+      root.innerHTML = "<ul>" + items + "</ul>";
+      pager.hidden = false;
+
+      document.getElementById("pageInfo").textContent =
+        state.page + " / " + pages + "頁";
+      document.getElementById("prevBtn").disabled = state.page <= 1;
+      document.getElementById("nextBtn").disabled = state.page >= pages;
+      document.getElementById("rowsBtn").textContent = "一頁" + state.rows + "筆";
+    }
+
+    function bindUi() {
+      document.getElementById("monthMenu").addEventListener("click", function (e) {
+        const a = e.target.closest("a[data-month]");
+        if (!a) return;
+        e.preventDefault();
+        state.month = a.getAttribute("data-month");
+        document.getElementById("monthBtn").textContent =
+          state.month === "all" ? "全部月份" : state.month;
+        this.querySelectorAll("a").forEach(function (el) {
+          el.classList.toggle("active", el === a);
+        });
+        applyFilter();
+      });
+
+      document.getElementById("rowsMenu").addEventListener("click", function (e) {
+        const a = e.target.closest("a[data-rows]");
+        if (!a) return;
+        e.preventDefault();
+        state.rows = Number(a.getAttribute("data-rows")) || 10;
+        state.page = 1;
+        renderList();
+      });
+
+      document.getElementById("prevBtn").addEventListener("click", function () {
+        if (state.page > 1) {
+          state.page -= 1;
+          renderList();
+        }
+      });
+
+      document.getElementById("nextBtn").addEventListener("click", function () {
+        const pages = Math.max(1, Math.ceil(state.filtered.length / state.rows));
+        if (state.page < pages) {
+          state.page += 1;
+          renderList();
+        }
+      });
+
+      // 觸控裝置：點擊展開下拉
+      ["monthDropdown", "rowsDropdown"].forEach(function (id) {
+        const el = document.getElementById(id);
+        el.querySelector(".dropbtn").addEventListener("click", function (e) {
+          e.stopPropagation();
+          el.classList.toggle("open");
+        });
+      });
+      document.addEventListener("click", function () {
+        document.querySelectorAll(".dropdown.open").forEach(function (el) {
+          el.classList.remove("open");
+        });
+      });
+    }
+
+    bindUi();
+
+    fetch("events.json")
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (events) {
+        state.all = Array.isArray(events) ? events : [];
+        buildMonthMenu();
+        applyFilter();
+      })
+      .catch(function (err) {
+        document.getElementById("root").innerHTML =
+          '<div class="status error">無法讀取 events.json（' +
+          escapeHtml(err.message) +
+          "）。請用本機伺服器開啟，並先執行爬蟲。</div>";
+      });
+  </script>
+</body>
+</html>

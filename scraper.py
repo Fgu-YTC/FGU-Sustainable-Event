@@ -1,0 +1,367 @@
+"""
+永續活動爬蟲：
+1. 從「最新消息」「研討會」「永續活動標籤頁」收集候選網址
+2. 合併上次 events.json／種子網址
+3. 內頁需有「永續活動」標籤才收錄
+4. 列表顯示日：優先抓內文「活動時間」；找不到再退回官網發佈日
+   （因活動需提前宣傳，發佈日 ≠ 活動日）
+
+本機：python scraper.py
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import time
+from pathlib import Path
+from urllib.parse import urljoin, urlsplit, urlunsplit
+
+import requests
+from bs4 import BeautifulSoup
+
+BASE_URL = "https://sdgs.fgu.edu.tw"
+NEWS_URL = f"{BASE_URL}/zh_tw/announcement/News"
+SEMINAR_URL = f"{BASE_URL}/zh_tw/announcement/Seminar"
+TAG_URL = (
+    f"{BASE_URL}/zh_tw/announcement/News"
+    f"?tags%5B%5D=6aa249da434ade0ee2b15128"
+)
+REQUIRED_TAG = "永續活動"
+REQUIRED_TAG_ID = "6aa249da434ade0ee2b15128"
+OUTPUT_PATH = Path(__file__).resolve().parent / "events.json"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+}
+REQUEST_TIMEOUT = 30
+DELAY_SECONDS = 0.4
+MAX_PAGES = 20
+
+# 已知有標籤、但可能暫時不在列表的文章（可再補）
+SEED_URLS = [
+    "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/"
+    "%F0%9F%8C%B1-ESG%E5%9F%B9%E5%8A%9B%E8%AA%B2%E7%A8%8B-"
+    "%E6%B0%B8%E7%BA%8C%E5%A0%B1%E5%91%8A%E6%9B%B8%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-"
+    "%E5%BE%9E%E5%90%88%E8%A6%8F%E5%88%B0%E7%89%B9%E8%89%B2%E5%B1%95%E7%8F%BE-72919609",
+]
+
+MONTH_LABELS = {
+    1: "一月",
+    2: "二月",
+    3: "三月",
+    4: "四月",
+    5: "五月",
+    6: "六月",
+    7: "七月",
+    8: "八月",
+    9: "九月",
+    10: "十月",
+    11: "十一月",
+    12: "十二月",
+}
+
+
+def get_soup(url: str) -> BeautifulSoup:
+    response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    response.encoding = response.apparent_encoding or "utf-8"
+    return BeautifulSoup(response.text, "html.parser")
+
+
+def normalize_link(url: str) -> str:
+    """統一成 zh_tw 路徑，去掉 query／fragment。"""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    full = urljoin(BASE_URL, url)
+    parts = urlsplit(full)
+    path = parts.path
+    if path.startswith("/announcement/"):
+        path = "/zh_tw" + path
+    elif path.startswith("/zh_cn/announcement/"):
+        path = path.replace("/zh_cn/", "/zh_tw/", 1)
+    elif path.startswith("/en/announcement/"):
+        path = path.replace("/en/", "/zh_tw/", 1)
+    return urlunsplit((parts.scheme, parts.netloc, path.rstrip("/"), "", ""))
+
+
+def article_key(url: str) -> str:
+    norm = normalize_link(url)
+    m = re.search(r"-(\d+)$", norm)
+    return m.group(1) if m else norm
+
+
+def parse_date_parts(date_str: str) -> tuple[str, str, str]:
+    date_str = (date_str or "").strip()
+    match = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})", date_str)
+    if not match:
+        return date_str, date_str or "—", ""
+    year, month, day = match.groups()
+    month_i = int(month)
+    day_s = f"{int(day):02d}"
+    return (
+        f"{int(year):04d}-{month_i:02d}-{day_s}",
+        MONTH_LABELS.get(month_i, f"{month_i}月"),
+        day_s,
+    )
+
+
+def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
+    """
+    回傳 (活動日, 來源說明)。
+    提前宣傳時官網日期常是發文日，故優先從內文抓活動時間。
+    """
+    text = content_text or ""
+    post = (post_date or "").strip()
+
+    # 民國年：115 年 9 月 23 日
+    m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
+    if m:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if y < 1911:
+            y += 1911
+        return f"{y:04d}-{mo:02d}-{d:02d}", "content_roc"
+
+    # 西元：時間／日期：2026-09-23 或 2026/09/23
+    m = re.search(
+        r"(?:時間|日期|活動時間|活動日期)[：:\s]*"
+        r"(\d{4})\s*[年/-]\s*(\d{1,2})\s*[月/-]\s*(\d{1,2})",
+        text,
+    )
+    if m:
+        return (
+            f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}",
+            "content_ymd",
+        )
+
+    # 多場次取第一場：【第 1 場】9/8
+    m = re.search(r"【第\s*1\s*場】\s*(\d{1,2})\s*/\s*(\d{1,2})", text)
+    if m:
+        year_m = re.match(r"^(\d{4})", post)
+        year = year_m.group(1) if year_m else "2026"
+        return (
+            f"{year}-{int(m.group(1)):02d}-{int(m.group(2)):02d}",
+            "content_session1",
+        )
+
+    return post, "post_date"
+
+
+def discover_max_page(soup: BeautifulSoup) -> int:
+    pages = {1}
+    for a in soup.select("a[href*='page_no']"):
+        m = re.search(r"page_no=(\d+)", a.get("href", ""))
+        if m:
+            pages.add(int(m.group(1)))
+    return min(max(pages), MAX_PAGES)
+
+
+def parse_list_page(soup: BeautifulSoup) -> list[dict]:
+    rows: list[dict] = []
+    for item in soup.select("li.i-annc__item"):
+        link_el = item.select_one("a[href]")
+        if not link_el:
+            continue
+        href = link_el.get("href", "")
+        if "/announcement/" not in href:
+            continue
+        # 只要文章頁（路徑最後有內容 slug），略過純列表
+        path = urlsplit(urljoin(BASE_URL, href)).path.rstrip("/")
+        if path.endswith("/News") or path.endswith("/Seminar"):
+            continue
+
+        title_el = item.select_one(".i-annc__title")
+        date_el = item.select_one(".i-annc__postdate")
+        title = (
+            title_el.get_text(strip=True)
+            if title_el
+            else link_el.get_text(strip=True)
+        )
+        link = normalize_link(href)
+        rows.append(
+            {
+                "title": title,
+                "date": date_el.get_text(strip=True) if date_el else "",
+                "link": link,
+                "key": article_key(link),
+            }
+        )
+    return rows
+
+
+def collect_from_list(list_url: str, label: str) -> dict[str, dict]:
+    print(f"正在抓取{label}：{list_url}")
+    first = get_soup(list_url)
+    max_page = discover_max_page(first)
+    print(f"  分頁：1～{max_page}")
+    by_key: dict[str, dict] = {}
+    for page in range(1, max_page + 1):
+        soup = first if page == 1 else get_soup(f"{list_url}?page_no={page}")
+        rows = parse_list_page(soup)
+        print(f"  第 {page} 頁：{len(rows)} 筆")
+        for row in rows:
+            by_key[row["key"]] = row
+        if page < max_page:
+            time.sleep(DELAY_SECONDS)
+    return by_key
+
+
+def collect_from_tag_page() -> dict[str, dict]:
+    print(f"正在抓取標籤頁：{TAG_URL}")
+    soup = get_soup(TAG_URL)
+    rows = parse_list_page(soup)
+    print(f"  標籤頁：{len(rows)} 筆")
+    return {row["key"]: row for row in rows}
+
+
+def collect_from_previous() -> dict[str, dict]:
+    if not OUTPUT_PATH.exists():
+        return {}
+    try:
+        data = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    by_key: dict[str, dict] = {}
+    for item in data if isinstance(data, list) else []:
+        link = normalize_link(item.get("link", ""))
+        if not link:
+            continue
+        key = article_key(link)
+        by_key[key] = {
+            "title": item.get("title") or "",
+            "date": item.get("date") or item.get("date_display") or "",
+            "link": link,
+            "key": key,
+        }
+    print(f"合併上次 events.json：{len(by_key)} 筆")
+    return by_key
+
+
+def collect_from_seeds() -> dict[str, dict]:
+    by_key: dict[str, dict] = {}
+    for url in SEED_URLS:
+        link = normalize_link(url)
+        key = article_key(link)
+        by_key[key] = {"title": "", "date": "", "link": link, "key": key}
+    if by_key:
+        print(f"合併種子網址：{len(by_key)} 筆")
+    return by_key
+
+
+def collect_candidates() -> list[dict]:
+    by_key: dict[str, dict] = {}
+    for chunk in (
+        collect_from_list(NEWS_URL, "最新消息"),
+        collect_from_list(SEMINAR_URL, "研討會"),
+        collect_from_tag_page(),
+        collect_from_previous(),
+        collect_from_seeds(),
+    ):
+        by_key.update(chunk)
+    items = list(by_key.values())
+    print(f"候選去重後共 {len(items)} 筆，開始檢查內頁標籤…")
+    return items
+
+
+def page_has_sustainability_tag(soup: BeautifulSoup) -> bool:
+    for el in soup.select(".s-annc__tag"):
+        if el.get_text(strip=True) == REQUIRED_TAG:
+            return True
+        parent = el.find_parent("a")
+        if parent and REQUIRED_TAG_ID in (parent.get("href") or ""):
+            return True
+    return False
+
+
+def extract_detail_meta(soup: BeautifulSoup) -> tuple[str, str, str, str, str]:
+    """title, date, content_html, content_text, image"""
+    title_el = soup.select_one("h3")
+    title = title_el.get_text(strip=True) if title_el else ""
+
+    date_el = soup.select_one(".s-annc__date")
+    date = date_el.get_text(strip=True) if date_el else ""
+
+    body = soup.select_one("div.s-annc__post-body")
+    content_html = str(body) if body else ""
+    content_text = body.get_text("\n", strip=True) if body else ""
+
+    image = ""
+    if body:
+        img = body.select_one("img[src]")
+        if img and img.get("src"):
+            image = urljoin(BASE_URL, img["src"])
+
+    return title, date, content_html, content_text, image
+
+
+def fetch_sustainability_events() -> list[dict]:
+    candidates = collect_candidates()
+    events: list[dict] = []
+
+    for index, row in enumerate(candidates, start=1):
+        link = row["link"]
+        hint_title = row.get("title") or link
+        print(f"  [{index}/{len(candidates)}] 檢查：{hint_title[:36]}…")
+        time.sleep(DELAY_SECONDS)
+        try:
+            soup = get_soup(link)
+        except requests.RequestException as exc:
+            print(f"      略過（讀取失敗）：{exc}")
+            continue
+
+        if not page_has_sustainability_tag(soup):
+            print("      → 無「永續活動」標籤")
+            continue
+
+        title, post_date, content_html, content_text, image = extract_detail_meta(
+            soup
+        )
+        post_date = post_date or row.get("date") or ""
+        event_date, date_source = extract_event_date(content_text, post_date)
+        date_display, month_label, day = parse_date_parts(event_date)
+        final_title = title or row.get("title") or "（無標題）"
+        print(
+            f"      → 符合，活動日={date_display}（{date_source}），發佈日={post_date or '—'}"
+        )
+
+        events.append(
+            {
+                "title": final_title,
+                "date": date_display,
+                "date_display": date_display,
+                "post_date": post_date,
+                "date_source": date_source,
+                "month_label": month_label,
+                "day": day,
+                "link": link,
+                "image": image,
+                "detail_raw": f"日期：{date_display}" if date_display else "",
+                "content_html": content_html,
+                "content_text": content_text,
+                "source": "fgu_sdgs",
+                "source_url": NEWS_URL,
+                "matched_tag": REQUIRED_TAG,
+            }
+        )
+
+    events.sort(key=lambda e: e.get("date") or "", reverse=True)
+    return events
+
+
+def main() -> None:
+    events = fetch_sustainability_events()
+    OUTPUT_PATH.write_text(
+        json.dumps(events, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"成功擷取 {len(events)} 筆「{REQUIRED_TAG}」，已存入 {OUTPUT_PATH.name}")
+
+
+if __name__ == "__main__":
+    main()
