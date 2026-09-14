@@ -66,10 +66,19 @@ MONTH_LABELS = {
 
 TIME_RANGE_RE = re.compile(
     r"(\d{1,2}:\d{2})\s*[-–—~〜～至到]\s*(?:上午|下午|中午)?\s*(\d{1,2}:\d{2})"
-    r"(?:\s*[（(][^）\n)]{0,40}[）)])?"
 )
 CLOCK_RE = re.compile(r"\d{1,2}:\d{2}")
 SESSION_RE = re.compile(r"【第\s*(\d+)\s*場】\s*([^\n]+)")
+ADMISSION_NOTE_RE = re.compile(
+    r"\s*[（(][^）)]*開放進場[^）)]*[）)]"
+)
+
+
+def clean_time_text(value: str) -> str:
+    """只保留幾點到幾點，去掉開放進場等括號說明。"""
+    text = ADMISSION_NOTE_RE.sub("", value or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 def get_soup(url: str) -> BeautifulSoup:
@@ -179,7 +188,7 @@ def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
 
 
 def extract_time(content_text: str) -> str:
-    """解析活動時間；多場次則分行列出每一場。"""
+    """解析活動時間；多場次則分行列出每一場。不含開放進場說明。"""
     text = content_text or ""
 
     sessions = SESSION_RE.findall(text)
@@ -187,7 +196,7 @@ def extract_time(content_text: str) -> str:
         lines: list[str] = []
         for num, rest in sessions:
             rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
-            rest = re.sub(r"\s+", " ", rest)
+            rest = clean_time_text(rest)
             if CLOCK_RE.search(rest):
                 lines.append(f"第{num}場 {rest}")
         if lines:
@@ -204,36 +213,12 @@ def extract_time(content_text: str) -> str:
             continue
         m = TIME_RANGE_RE.search(source)
         if m:
-            raw = m.group(0)
-            # 正規化「12:10 - 下午14:10」→「12:10 - 14:10」
-            raw = re.sub(r"([-–—~〜～至到]\s*)(?:上午|下午|中午)\s*", r"\1", raw)
-            note = ""
-            # 進場說明可能在下一行
-            if "開放進場" not in raw:
-                nm = re.search(
-                    r"[（(]\s*\d{1,2}:\d{2}\s*開放進場\s*[）)]",
-                    text[m.end() : m.end() + 80],
-                )
-                if nm:
-                    note = nm.group(0)
-            out = re.sub(r"\s+", " ", raw + note).strip()
-            return out
+            return f"{m.group(1)} - {m.group(2)}"
 
     if chunk:
-        m = re.search(
-            r"(\d{1,2}:\d{2})(?:\s*[（(][^）\n)]{0,40}[）)])?",
-            chunk,
-        )
+        m = CLOCK_RE.search(clean_time_text(chunk))
         if m:
-            out = re.sub(r"\s+", " ", m.group(0)).strip()
-            if "開放進場" not in out:
-                nm = re.search(
-                    r"[（(]\s*\d{1,2}:\d{2}\s*開放進場\s*[）)]",
-                    text,
-                )
-                if nm:
-                    out = f"{out}{nm.group(0)}"
-            return out
+            return m.group(0)
 
     return ""
 

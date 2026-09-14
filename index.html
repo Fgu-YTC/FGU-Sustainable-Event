@@ -508,8 +508,9 @@
       const lines = [];
       // 日期已在左側色塊顯示，內文不再重複
       if (ev.time) {
-        const t = String(ev.time);
-        lines.push(t.indexOf("\n") >= 0 ? "時間：\n" + t : "時間：" + t);
+        // 去掉「開放進場」括號說明，只留幾點到幾點
+        const t = String(ev.time).replace(/\s*[（(][^）)]*開放進場[^）)]*[）)]/g, "").trim();
+        if (t) lines.push(t.indexOf("\n") >= 0 ? "時間：\n" + t : "時間：" + t);
       }
       if (ev.location) lines.push("地點：" + ev.location);
       return lines.join("\n");
