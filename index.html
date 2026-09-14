@@ -167,31 +167,68 @@
       color: #fff;
     }
 
-    .act-list {
-      transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    .act-stage {
+      overflow: hidden;
+      position: relative;
+      width: 100%;
     }
-    .act-list.is-switching {
-      opacity: 0;
-      transform: translateY(8px);
+    .act-list {
+      will-change: transform, opacity;
+    }
+    .act-list.flow-out-left {
+      animation: flowOutLeft 0.34s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .act-list.flow-out-right {
+      animation: flowOutRight 0.34s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .act-list.flow-in-from-right {
+      animation: flowInFromRight 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .act-list.flow-in-from-left {
+      animation: flowInFromLeft 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .act-list ul li {
-      animation: cardIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: cardFlowIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-    .act-list ul li:nth-child(1) { animation-delay: 0.02s; }
-    .act-list ul li:nth-child(2) { animation-delay: 0.06s; }
-    .act-list ul li:nth-child(3) { animation-delay: 0.1s; }
-    .act-list ul li:nth-child(4) { animation-delay: 0.14s; }
-    .act-list ul li:nth-child(5) { animation-delay: 0.18s; }
-    .act-list ul li:nth-child(6) { animation-delay: 0.22s; }
-    .act-list ul li:nth-child(n+7) { animation-delay: 0.26s; }
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .act-list.flow-in-from-right ul li { --card-x: 28px; }
+    .act-list.flow-in-from-left ul li { --card-x: -28px; }
+    .act-list ul li:nth-child(1) { animation-delay: 0.04s; }
+    .act-list ul li:nth-child(2) { animation-delay: 0.09s; }
+    .act-list ul li:nth-child(3) { animation-delay: 0.14s; }
+    .act-list ul li:nth-child(4) { animation-delay: 0.19s; }
+    .act-list ul li:nth-child(5) { animation-delay: 0.24s; }
+    .act-list ul li:nth-child(6) { animation-delay: 0.29s; }
+    .act-list ul li:nth-child(n+7) { animation-delay: 0.34s; }
+    @keyframes flowOutLeft {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(-42%); }
+    }
+    @keyframes flowOutRight {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(42%); }
+    }
+    @keyframes flowInFromRight {
+      from { opacity: 0; transform: translateX(42%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes flowInFromLeft {
+      from { opacity: 0; transform: translateX(-42%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes cardFlowIn {
+      from { opacity: 0; transform: translateX(var(--card-x, 20px)); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .seg-tabs.is-flowing .seg-tabs-pill {
+      transition-duration: 0.45s;
     }
     @media (prefers-reduced-motion: reduce) {
       .seg-tabs-pill,
-      .seg-tabs button,
-      .act-list { transition: none; }
+      .seg-tabs button { transition: none; }
+      .act-list.flow-out-left,
+      .act-list.flow-out-right,
+      .act-list.flow-in-from-right,
+      .act-list.flow-in-from-left,
       .act-list ul li { animation: none; }
     }
 
@@ -381,9 +418,11 @@
       <div class="tablink sky" aria-hidden="true"></div>
     </section>
 
-    <section class="act-list" id="root">
-      <div class="status">載入中…</div>
-    </section>
+    <div class="act-stage" id="actStage">
+      <section class="act-list" id="root">
+        <div class="status">載入中…</div>
+      </section>
+    </div>
 
     <div class="pagenation inside" id="pager" hidden>
       <div class="dropdown" id="rowsDropdown">
@@ -412,6 +451,8 @@
       month: "all",
       rows: 10,
       page: 1,
+      flowDir: "left",
+      animating: false,
     };
     const IS_EMBED = document.documentElement.classList.contains("is-embed");
 
@@ -523,32 +564,66 @@
       pill.style.transform = "translateX(" + left + "px)";
     }
 
+    function clearFlowClasses(el) {
+      el.classList.remove(
+        "flow-out-left",
+        "flow-out-right",
+        "flow-in-from-left",
+        "flow-in-from-right"
+      );
+    }
+
     function applyFilter(options) {
-      const animate = !options || options.animate !== false;
+      const animate = options && options.animate === true;
       const root = document.getElementById("root");
-      const run = function () {
+      const tabs = document.querySelector(".seg-tabs");
+      const dir = (options && options.dir) || state.flowDir || "left";
+
+      const swapContent = function () {
         buildTabPool();
         buildMonthMenu();
         state.filtered = state.month === "all"
           ? state.tabPool.slice()
           : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
         state.page = 1;
+        clearFlowClasses(root);
         renderList();
-        root.classList.remove("is-switching");
+        if (animate) {
+          // 往右頁籤 → 內容從右側流入；往左則相反
+          root.classList.add(dir === "left" ? "flow-in-from-right" : "flow-in-from-left");
+          window.setTimeout(function () {
+            clearFlowClasses(root);
+            if (tabs) tabs.classList.remove("is-flowing");
+            state.animating = false;
+            notifyParentHeight();
+          }, 520);
+        } else {
+          if (tabs) tabs.classList.remove("is-flowing");
+          state.animating = false;
+        }
         syncTabPill();
         notifyParentHeight();
       };
+
       if (!animate) {
-        run();
+        swapContent();
         return;
       }
-      root.classList.add("is-switching");
-      window.setTimeout(run, 160);
+
+      state.animating = true;
+      if (tabs) tabs.classList.add("is-flowing");
+      clearFlowClasses(root);
+      // 往歷年活動：舊內容往左流走；回來 Coming Soon：往右流走
+      root.classList.add(dir === "left" ? "flow-out-left" : "flow-out-right");
+      window.setTimeout(swapContent, 300);
     }
 
     function setTab(tab) {
-      if ((tab === "past" ? "past" : "coming") === state.tab) return;
-      state.tab = tab === "past" ? "past" : "coming";
+      const next = tab === "past" ? "past" : "coming";
+      if (next === state.tab || state.animating) return;
+      const dir = next === "past" ? "left" : "right";
+      state.flowDir = dir;
+      state.tab = next;
       state.month = "all";
       document.getElementById("monthBtn").textContent = "全部月份";
       document.querySelectorAll(".seg-tabs button").forEach(function (btn) {
@@ -557,7 +632,7 @@
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
       syncTabPill();
-      applyFilter({ animate: true });
+      applyFilter({ animate: true, dir: dir });
     }
 
     function emptyMessage() {
