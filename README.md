@@ -22,6 +22,6 @@ python -m http.server 8080
 
 目標頁：https://sdgs.fgu.edu.tw/zh_tw/announcement/test
 
-1. 在 GitHub 編輯 `overrides.json` 設定各篇「列表顯示日期」（用文章網址結尾數字當 key）  
-2. 官網後台只貼 `orbit-paste-snippet.html` 裡的 iframe（顯示頁沒有手動選日期 UI）  
+1. 日期請在自己的 Pages 管理：https://fgu-ytc.github.io/SDGSACTIVITY/（非 embed）  
+2. 官網只貼 `orbit-paste-snippet.html`（`?embed=1`，看不到改日期）  
 3. 建議把頁面標題 `test` 改成 `永續活動`

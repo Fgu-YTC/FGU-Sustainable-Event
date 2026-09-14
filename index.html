@@ -89,6 +89,81 @@
       margin-right: 0;
     }
 
+    html.is-embed .admin-only {
+      display: none !important;
+    }
+
+    .admin-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      margin: 0 0 1rem;
+      padding: 0.85rem 1rem;
+      background: #f3f7fb;
+      border: 1px solid rgba(49, 58, 155, 0.15);
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+
+    .admin-bar strong {
+      color: var(--indigo);
+      margin-right: 0.25rem;
+    }
+
+    .admin-bar .hint {
+      color: #5a6b78;
+      flex: 1 1 220px;
+    }
+
+    .admin-bar button,
+    .admin-bar label.token-btn {
+      border: 1px solid var(--indigo);
+      background: #fff;
+      color: var(--indigo);
+      border-radius: 50em;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+    }
+
+    .admin-bar button.primary {
+      background: var(--indigo);
+      color: #fff;
+    }
+
+    .admin-bar button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .admin-msg {
+      width: 100%;
+      margin: 0;
+      color: #2d6a4f;
+      font-size: 0.86rem;
+    }
+
+    .admin-msg.error {
+      color: #8a2f22;
+    }
+
+    .admin-date {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .admin-date input[type="date"] {
+      border: 1px solid rgba(49, 58, 155, 0.25);
+      border-radius: 8px;
+      padding: 0.25rem 0.4rem;
+      font-family: inherit;
+    }
+
     a { color: var(--dark); text-decoration: none; }
     a:hover { color: var(--indigo); }
 
@@ -449,6 +524,15 @@
 </head>
 <body>
   <main class="container">
+    <div class="admin-only admin-bar" id="adminBar">
+      <strong>日期管理</strong>
+      <span class="hint">僅在此 GitHub Pages 可改；佛光嵌入頁看不到。儲存會更新 overrides.json。</span>
+      <button type="button" id="tokenBtn">設定 GitHub Token</button>
+      <button type="button" id="downloadBtn">下載 overrides.json</button>
+      <button type="button" class="primary" id="saveGithubBtn">儲存到 GitHub</button>
+      <p class="admin-msg" id="adminMsg" hidden></p>
+    </div>
+
     <section class="page-title indigo xdot">
       <div class="row">
         <div class="col-title">
@@ -494,10 +578,19 @@
     const state = {
       all: [],
       filtered: [],
+      overrides: {},
       month: "all",
       rows: 10,
       page: 1,
+      dirty: false,
     };
+
+    const IS_EMBED = document.documentElement.classList.contains("is-embed");
+    const GH_OWNER = "Fgu-YTC";
+    const GH_REPO = "SDGSACTIVITY";
+    const GH_FILE = "overrides.json";
+    const GH_BRANCH = "main";
+    const TOKEN_KEY = "sdgs_activity_gh_token";
 
     function escapeHtml(str) {
       return String(str ?? "")
@@ -505,6 +598,19 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    }
+
+    function setAdminMsg(text, isError) {
+      const el = document.getElementById("adminMsg");
+      if (!el) return;
+      if (!text) {
+        el.hidden = true;
+        el.textContent = "";
+        return;
+      }
+      el.hidden = false;
+      el.textContent = text;
+      el.classList.toggle("error", !!isError);
     }
 
     function ymKey(ev) {
@@ -566,6 +672,34 @@
       });
     }
 
+    function buildOverridesObject() {
+      const out = {
+        _readme:
+          "在 GitHub Pages 管理頁設定「列表顯示日期」。key 用網址最後的數字 ID。格式 YYYY-MM-DD。",
+      };
+      Object.keys(state.overrides || {}).forEach(function (key) {
+        if (key === "_readme") return;
+        const row = state.overrides[key];
+        if (row && typeof row === "object") {
+          out[key] = {
+            date: row.date || "",
+            note: row.note || "",
+          };
+        }
+      });
+      state.all.forEach(function (ev) {
+        const id = articleIdFromLink(ev.link);
+        if (!id || !ev.date) return;
+        out[id] = {
+          date: ev.date,
+          note:
+            (state.overrides[id] && state.overrides[id].note) ||
+            String(ev.title || "").slice(0, 40),
+        };
+      });
+      return out;
+    }
+
     function buildMonthMenu() {
       const keys = Array.from(
         new Set(state.all.map(ymKey).filter(Boolean))
@@ -592,7 +726,7 @@
     }
 
     function notifyParentHeight() {
-      if (!document.documentElement.classList.contains("is-embed")) return;
+      if (!IS_EMBED) return;
       if (window.parent === window) return;
       const root = document.documentElement;
       const body = document.body;
@@ -607,6 +741,20 @@
       window.parent.postMessage(
         { source: "sdgs-activity", type: "resize", height: height },
         "*"
+      );
+    }
+
+    function adminDateHtml(ev) {
+      if (IS_EMBED) return "";
+      const id = articleIdFromLink(ev.link);
+      if (!id) return "";
+      return (
+        '<div class="admin-only admin-date">' +
+          "<label>活動日 " +
+          '<input type="date" data-id="' + escapeHtml(id) + '" value="' +
+          escapeHtml(ev.date || "") + '" />' +
+          "</label>" +
+        "</div>"
       );
     }
 
@@ -638,6 +786,7 @@
             '<div class="date"><div class="text">' + month + "<br>" + day + "</div></div>" +
             "<h4>" + titleHtml(ev) + "</h4>" +
             "<p>" + detail + "</p>" +
+            adminDateHtml(ev) +
           "</li>"
         );
       }).join("");
@@ -654,6 +803,115 @@
         notifyParentHeight();
         setTimeout(notifyParentHeight, 120);
       });
+    }
+
+    function updateEventDate(id, ymd) {
+      state.all.forEach(function (ev) {
+        if (articleIdFromLink(ev.link) === id) applyDateParts(ev, ymd);
+      });
+      if (!state.overrides[id] || typeof state.overrides[id] !== "object") {
+        state.overrides[id] = { date: ymd, note: "" };
+      } else {
+        state.overrides[id].date = ymd;
+      }
+      state.dirty = true;
+      setAdminMsg("已修改，請按「儲存到 GitHub」才會同步到佛光嵌入頁。");
+      buildMonthMenu();
+      applyFilter();
+    }
+
+    function downloadOverrides() {
+      const payload = buildOverridesObject();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "overrides.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      setAdminMsg("已下載 overrides.json。");
+    }
+
+    function getToken() {
+      return sessionStorage.getItem(TOKEN_KEY) || "";
+    }
+
+    function askToken() {
+      const current = getToken();
+      const next = window.prompt(
+        "請貼上 GitHub Personal Access Token（需 repo 權限）。只存在此瀏覽器分頁，不會送到佛光網站。",
+        current
+      );
+      if (next === null) return getToken();
+      const trimmed = next.trim();
+      if (trimmed) sessionStorage.setItem(TOKEN_KEY, trimmed);
+      else sessionStorage.removeItem(TOKEN_KEY);
+      setAdminMsg(trimmed ? "Token 已設定在本分頁。" : "已清除 Token。");
+      return trimmed;
+    }
+
+    function utf8ToBase64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    async function saveToGithub() {
+      const token = getToken() || askToken();
+      if (!token) {
+        setAdminMsg("未設定 Token，無法寫入 GitHub。", true);
+        return;
+      }
+
+      const btn = document.getElementById("saveGithubBtn");
+      btn.disabled = true;
+      setAdminMsg("寫入 GitHub 中…");
+
+      const apiBase =
+        "https://api.github.com/repos/" +
+        GH_OWNER + "/" + GH_REPO + "/contents/" + GH_FILE;
+      const headers = {
+        Accept: "application/vnd.github+json",
+        Authorization: "Bearer " + token,
+        "X-GitHub-Api-Version": "2022-11-28",
+      };
+
+      try {
+        let sha = "";
+        const getRes = await fetch(apiBase + "?ref=" + GH_BRANCH, { headers: headers });
+        if (getRes.ok) {
+          const meta = await getRes.json();
+          sha = meta.sha || "";
+        } else if (getRes.status !== 404) {
+          throw new Error("讀取檔案失敗 HTTP " + getRes.status);
+        }
+
+        const payload = buildOverridesObject();
+        const body = {
+          message: "chore: update activity display dates via Pages admin",
+          content: utf8ToBase64(JSON.stringify(payload, null, 2) + "\n"),
+          branch: GH_BRANCH,
+        };
+        if (sha) body.sha = sha;
+
+        const putRes = await fetch(apiBase, {
+          method: "PUT",
+          headers: Object.assign({ "Content-Type": "application/json" }, headers),
+          body: JSON.stringify(body),
+        });
+        if (!putRes.ok) {
+          const errText = await putRes.text();
+          throw new Error("寫入失敗 HTTP " + putRes.status + " " + errText.slice(0, 180));
+        }
+
+        state.dirty = false;
+        state.overrides = payload;
+        setAdminMsg("已儲存到 GitHub。約 1～2 分鐘後佛光嵌入頁會更新。");
+      } catch (err) {
+        setAdminMsg(String(err.message || err), true);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     function bindUi() {
@@ -694,7 +952,6 @@
         }
       });
 
-      // 觸控裝置：點擊展開下拉
       ["monthDropdown", "rowsDropdown"].forEach(function (id) {
         const el = document.getElementById(id);
         el.querySelector(".dropbtn").addEventListener("click", function (e) {
@@ -707,6 +964,17 @@
           el.classList.remove("open");
         });
       });
+
+      if (!IS_EMBED) {
+        document.getElementById("root").addEventListener("change", function (e) {
+          const input = e.target.closest('input[type="date"][data-id]');
+          if (!input) return;
+          updateEventDate(input.getAttribute("data-id"), input.value);
+        });
+        document.getElementById("tokenBtn").addEventListener("click", askToken);
+        document.getElementById("downloadBtn").addEventListener("click", downloadOverrides);
+        document.getElementById("saveGithubBtn").addEventListener("click", saveToGithub);
+      }
     }
 
     bindUi();
@@ -728,7 +996,8 @@
     ])
       .then(function (pair) {
         const events = pair[0];
-        const overrides = pair[1];
+        const overrides = pair[1] || {};
+        state.overrides = overrides;
         state.all = mergeOverrides(
           Array.isArray(events) ? events : [],
           overrides
