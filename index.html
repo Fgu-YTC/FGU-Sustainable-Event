@@ -77,12 +77,16 @@
     }
 
     html.is-embed .act-list ul {
-      margin: 0 2%;
+      margin: 0;
     }
 
     html.is-embed .pagenation {
-      margin-left: 2%;
-      margin-right: 2%;
+      margin: 24px 0 8px;
+    }
+
+    html.is-embed .status {
+      margin-left: 100px;
+      margin-right: 0;
     }
 
     a { color: var(--dark); text-decoration: none; }
@@ -587,6 +591,25 @@
       renderList();
     }
 
+    function notifyParentHeight() {
+      if (!document.documentElement.classList.contains("is-embed")) return;
+      if (window.parent === window) return;
+      const root = document.documentElement;
+      const body = document.body;
+      const height = Math.ceil(
+        Math.max(
+          root.scrollHeight,
+          body.scrollHeight,
+          root.offsetHeight,
+          body.offsetHeight
+        )
+      );
+      window.parent.postMessage(
+        { source: "sdgs-activity", type: "resize", height: height },
+        "*"
+      );
+    }
+
     function renderList() {
       const root = document.getElementById("root");
       const pager = document.getElementById("pager");
@@ -598,6 +621,7 @@
       if (!total) {
         root.innerHTML = '<div class="status">此條件下沒有活動資料</div>';
         pager.hidden = true;
+        requestAnimationFrame(notifyParentHeight);
         return;
       }
 
@@ -626,6 +650,10 @@
       document.getElementById("prevBtn").disabled = state.page <= 1;
       document.getElementById("nextBtn").disabled = state.page >= pages;
       document.getElementById("rowsBtn").textContent = "一頁" + state.rows + "筆";
+      requestAnimationFrame(function () {
+        notifyParentHeight();
+        setTimeout(notifyParentHeight, 120);
+      });
     }
 
     function bindUi() {
@@ -682,6 +710,7 @@
     }
 
     bindUi();
+    window.addEventListener("resize", notifyParentHeight);
 
     Promise.all([
       fetch("events.json").then(function (res) {
@@ -706,12 +735,14 @@
         );
         buildMonthMenu();
         applyFilter();
+        notifyParentHeight();
       })
       .catch(function (err) {
         document.getElementById("root").innerHTML =
           '<div class="status error">無法讀取資料（' +
           escapeHtml(err.message) +
           "）。請確認 events.json 是否存在。</div>";
+        notifyParentHeight();
       });
   </script>
 </body>
