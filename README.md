@@ -11,7 +11,7 @@
 
 ## 自動更新
 
-GitHub Actions 每天約台北 08:00 跑一次爬蟲並部署；也可在 Actions 手動觸發 **Scrape and Deploy Pages**。
+GitHub Actions **每小時**跑一次爬蟲並部署（排程可能略延遲）；也可在 Actions 手動觸發 **Scrape and Deploy Pages**。
 
 本機：
 
