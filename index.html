@@ -94,20 +94,38 @@
       position: relative;
       z-index: 3;
     }
+    .seg-tabs-pill {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      height: calc(100% - 8px);
+      width: 0;
+      border-radius: 50em;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(49, 58, 155, 0.18);
+      transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                  width 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 0;
+      pointer-events: none;
+      will-change: transform, width;
+    }
     .seg-tabs button {
       font-family: inherit;
       border: 0;
       background: transparent;
-      color: #fff;
+      color: rgba(255, 255, 255, 0.88);
       cursor: pointer;
       padding: 8px 18px;
       border-radius: 50em;
       font-size: 0.95rem;
       font-weight: 500;
       white-space: nowrap;
+      position: relative;
+      z-index: 1;
+      transition: color 0.28s ease;
     }
     .seg-tabs button.active {
-      background: #fff;
+      background: transparent;
       color: var(--indigo);
       font-weight: 700;
     }
@@ -139,10 +157,42 @@
     html.is-embed .seg-tabs {
       background: var(--babyblue);
     }
+    html.is-embed .seg-tabs-pill {
+      background: var(--indigo);
+      box-shadow: 0 2px 10px rgba(49, 58, 155, 0.25);
+    }
     html.is-embed .seg-tabs button { color: var(--dark); }
     html.is-embed .seg-tabs button.active {
-      background: var(--indigo);
+      background: transparent;
       color: #fff;
+    }
+
+    .act-list {
+      transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .act-list.is-switching {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .act-list ul li {
+      animation: cardIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .act-list ul li:nth-child(1) { animation-delay: 0.02s; }
+    .act-list ul li:nth-child(2) { animation-delay: 0.06s; }
+    .act-list ul li:nth-child(3) { animation-delay: 0.1s; }
+    .act-list ul li:nth-child(4) { animation-delay: 0.14s; }
+    .act-list ul li:nth-child(5) { animation-delay: 0.18s; }
+    .act-list ul li:nth-child(6) { animation-delay: 0.22s; }
+    .act-list ul li:nth-child(n+7) { animation-delay: 0.26s; }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .seg-tabs-pill,
+      .seg-tabs button,
+      .act-list { transition: none; }
+      .act-list ul li { animation: none; }
     }
 
     .dropdown {
@@ -318,6 +368,7 @@
         <div class="col-title"><h4>研討會與活動</h4></div>
         <div class="col-filter">
           <div class="seg-tabs" role="tablist" aria-label="活動分類">
+            <span class="seg-tabs-pill" id="tabPill" aria-hidden="true"></span>
             <button type="button" role="tab" id="tabComing" class="active" aria-selected="true" data-tab="coming">Coming Soon</button>
             <button type="button" role="tab" id="tabPast" aria-selected="false" data-tab="past">歷年活動</button>
           </div>
@@ -460,17 +511,43 @@
       }
     }
 
-    function applyFilter() {
-      buildTabPool();
-      buildMonthMenu();
-      state.filtered = state.month === "all"
-        ? state.tabPool.slice()
-        : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
-      state.page = 1;
-      renderList();
+    function syncTabPill() {
+      const tabs = document.querySelector(".seg-tabs");
+      const pill = document.getElementById("tabPill");
+      const active = tabs && tabs.querySelector("button.active");
+      if (!tabs || !pill || !active) return;
+      const tabsRect = tabs.getBoundingClientRect();
+      const btnRect = active.getBoundingClientRect();
+      const left = btnRect.left - tabsRect.left;
+      pill.style.width = btnRect.width + "px";
+      pill.style.transform = "translateX(" + left + "px)";
+    }
+
+    function applyFilter(options) {
+      const animate = !options || options.animate !== false;
+      const root = document.getElementById("root");
+      const run = function () {
+        buildTabPool();
+        buildMonthMenu();
+        state.filtered = state.month === "all"
+          ? state.tabPool.slice()
+          : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
+        state.page = 1;
+        renderList();
+        root.classList.remove("is-switching");
+        syncTabPill();
+        notifyParentHeight();
+      };
+      if (!animate) {
+        run();
+        return;
+      }
+      root.classList.add("is-switching");
+      window.setTimeout(run, 160);
     }
 
     function setTab(tab) {
+      if ((tab === "past" ? "past" : "coming") === state.tab) return;
       state.tab = tab === "past" ? "past" : "coming";
       state.month = "all";
       document.getElementById("monthBtn").textContent = "全部月份";
@@ -479,7 +556,8 @@
         btn.classList.toggle("active", on);
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
-      applyFilter();
+      syncTabPill();
+      applyFilter({ animate: true });
     }
 
     function emptyMessage() {
@@ -576,9 +654,13 @@
         el.classList.remove("open");
       });
     });
-    window.addEventListener("resize", notifyParentHeight);
+    window.addEventListener("resize", function () {
+      syncTabPill();
+      notifyParentHeight();
+    });
 
     document.getElementById("root").innerHTML = '<div class="status">載入活動資料中…</div>';
+    requestAnimationFrame(syncTabPill);
 
     fetch("events.json?t=" + Date.now())
       .then(function (res) {
@@ -587,7 +669,8 @@
       })
       .then(function (data) {
         state.all = Array.isArray(data) ? data : [];
-        applyFilter();
+        applyFilter({ animate: false });
+        requestAnimationFrame(syncTabPill);
       })
       .catch(function () {
         document.getElementById("root").innerHTML =
