@@ -555,12 +555,21 @@
       window.parent.postMessage({ source: "sdgs-activity", type: "resize", height: h }, "*");
     }
 
+    function sortKey(ev) {
+      // 多場次以最後一場排序，與 Coming Soon 分類一致
+      return eventEndDate(ev) || String(ev.date || "");
+    }
+
     function buildTabPool() {
       const coming = state.all.filter(isComing).slice().sort(function (a, b) {
-        return String(a.date).localeCompare(String(b.date));
+        const byDate = sortKey(b).localeCompare(sortKey(a));
+        if (byDate !== 0) return byDate;
+        return String(b.post_date || "").localeCompare(String(a.post_date || ""));
       });
       const past = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(function (a, b) {
-        return String(b.date).localeCompare(String(a.date));
+        const byDate = sortKey(b).localeCompare(sortKey(a));
+        if (byDate !== 0) return byDate;
+        return String(b.post_date || "").localeCompare(String(a.post_date || ""));
       });
       state.tabPool = state.tab === "coming" ? coming : past;
     }
