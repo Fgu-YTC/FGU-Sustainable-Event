@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>永續活動｜本機預覽</title>
+  <title>永續活動</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
   <script>
-    // 嵌入佛光官網 iframe 時啟用精簡模式
     if (new URLSearchParams(location.search).get("embed") === "1") {
       document.documentElement.classList.add("is-embed");
     }
@@ -20,11 +19,8 @@
       --sky: #2D7CC5;
       --babyblue: #DBF5FE;
       --dark: #403a39;
-      --org: #ff4b00;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
@@ -32,227 +28,14 @@
       background: #fff;
       min-height: 100vh;
     }
-
-    /* 嵌入官網：隱藏重複大標題，只留篩選與列表 */
-    html.is-embed body {
-      min-height: 0;
-      background: transparent;
-    }
-
-    html.is-embed .container {
-      width: 100%;
-      padding: 0.25rem 0 1rem;
-    }
-
-    html.is-embed .page-title {
-      background: transparent;
-      color: var(--dark);
-      border-radius: 0;
-      padding: 0;
-      margin: 0 0 1rem;
-      font-family: inherit;
-    }
-
-    html.is-embed .page-title .row {
-      min-height: 0;
-      padding: 0;
-      justify-content: flex-end;
-    }
-
-    html.is-embed .page-title .col-title,
-    html.is-embed .page-title .tablink {
-      display: none;
-    }
-
-    html.is-embed .page-title .col-filter {
-      flex: 0 0 auto;
-      max-width: none;
-      min-height: 0;
-    }
-
-    html.is-embed .page-title .dropdown {
-      position: relative;
-      right: auto;
-      top: auto;
-    }
-
-    html.is-embed .act-list ul {
-      margin: 0;
-    }
-
-    html.is-embed .pagenation {
-      margin: 24px 0 8px;
-    }
-
-    html.is-embed .status {
-      margin-left: 100px;
-      margin-right: 0;
-    }
-
-    html.is-embed .admin-only {
-      display: none !important;
-    }
-
-    .admin-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      align-items: center;
-      margin: 0 0 1rem;
-      padding: 0.85rem 1rem;
-      background: #f3f7fb;
-      border: 1px solid rgba(49, 58, 155, 0.15);
-      border-radius: 12px;
-      font-size: 0.9rem;
-    }
-
-    .admin-bar strong {
-      color: var(--indigo);
-      margin-right: 0.25rem;
-    }
-
-    .admin-bar .hint {
-      color: #5a6b78;
-      flex: 1 1 220px;
-    }
-
-    .admin-bar button,
-    .admin-bar a.admin-link {
-      border: 1px solid var(--indigo);
-      background: #fff;
-      color: var(--indigo);
-      border-radius: 50em;
-      padding: 0.4rem 0.9rem;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.88rem;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .admin-bar button.primary {
-      background: var(--indigo);
-      color: #fff;
-    }
-
-    .admin-bar a.admin-link:hover {
-      background: var(--babyblue);
-    }
-
-    .admin-bar button:disabled {
-      opacity: 0.45;
-      cursor: default;
-    }
-
-    .admin-modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(24, 28, 48, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .admin-modal-backdrop[hidden] {
-      display: none !important;
-    }
-
-    .admin-modal {
-      width: min(460px, 100%);
-      background: #fff;
-      border-radius: 16px;
-      padding: 1.25rem 1.35rem 1.1rem;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-      color: var(--dark);
-    }
-
-    .admin-modal h3 {
-      margin: 0 0 0.75rem;
-      font-size: 1.1rem;
-      color: var(--indigo);
-    }
-
-    .admin-modal ol {
-      margin: 0 0 0.9rem;
-      padding-left: 1.2rem;
-      line-height: 1.55;
-      font-size: 0.92rem;
-    }
-
-    .admin-modal input {
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid rgba(49, 58, 155, 0.25);
-      border-radius: 10px;
-      padding: 0.55rem 0.7rem;
-      font-family: inherit;
-      margin-bottom: 0.85rem;
-    }
-
-    .admin-modal .actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-
-    .admin-modal .actions button,
-    .admin-modal .actions a {
-      border: 1px solid var(--indigo);
-      background: #fff;
-      color: var(--indigo);
-      border-radius: 50em;
-      padding: 0.4rem 0.85rem;
-      font-family: inherit;
-      font-size: 0.88rem;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .admin-modal .actions button.primary {
-      background: var(--indigo);
-      color: #fff;
-    }
-
-    .admin-msg {
-      width: 100%;
-      margin: 0;
-      color: #2d6a4f;
-      font-size: 0.86rem;
-    }
-
-    .admin-msg.error {
-      color: #8a2f22;
-    }
-
-    .admin-date {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      font-size: 0.9rem;
-    }
-
-    .admin-date input[type="date"] {
-      border: 1px solid rgba(49, 58, 155, 0.25);
-      border-radius: 8px;
-      padding: 0.25rem 0.4rem;
-      font-family: inherit;
-    }
-
-    a { color: var(--dark); text-decoration: none; }
-    a:hover { color: var(--indigo); }
-
+    html.is-embed body { min-height: 0; background: transparent; }
     .container {
       width: min(1140px, calc(100% - 2rem));
       margin: 0 auto;
       padding: 1.5rem 0 3rem;
     }
+    html.is-embed .container { width: 100%; padding: 0.25rem 0 1rem; }
 
-    /* 標題區：仿 FICHET page-title.indigo */
     .page-title {
       color: #fff;
       background: var(--indigo);
@@ -262,7 +45,6 @@
       position: relative;
       margin: 30px 0 50px;
     }
-
     .page-title .row {
       display: flex;
       flex-wrap: wrap;
@@ -272,19 +54,8 @@
       min-height: 100px;
       padding: 0 1.25rem;
     }
-
-    .page-title .col-title {
-      flex: 0 0 25%;
-      max-width: 25%;
-    }
-
-    .page-title .col-filter {
-      flex: 0 0 75%;
-      max-width: 75%;
-      position: relative;
-      min-height: 50px;
-    }
-
+    .page-title .col-title { flex: 0 0 25%; max-width: 25%; }
+    .page-title .col-filter { flex: 0 0 75%; max-width: 75%; position: relative; min-height: 50px; }
     .page-title h4 {
       margin: 0;
       text-align: center;
@@ -292,29 +63,36 @@
       font-weight: 700;
       letter-spacing: 0.06em;
     }
-
-    .page-title .source {
-      margin: 0.4rem 0 0;
-      text-align: center;
-      font-family: "Noto Sans TC", sans-serif;
-      font-size: 0.78rem;
-      opacity: 0.85;
-      font-weight: 400;
-    }
-
     .page-title .tablink {
       position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 75%;
-      height: 100%;
+      right: 0; bottom: 0;
+      width: 75%; height: 100%;
       background: var(--sky);
       border-radius: 0 50em 50em 0;
       z-index: 1;
       pointer-events: none;
     }
+    html.is-embed .page-title {
+      background: transparent;
+      color: var(--dark);
+      border-radius: 0;
+      padding: 0;
+      margin: 0 0 1rem;
+      font-family: inherit;
+    }
+    html.is-embed .page-title .row {
+      min-height: 0;
+      padding: 0;
+      justify-content: flex-end;
+    }
+    html.is-embed .page-title .col-title,
+    html.is-embed .page-title .tablink { display: none; }
+    html.is-embed .page-title .col-filter {
+      flex: 0 0 auto;
+      max-width: none;
+      min-height: 0;
+    }
 
-    /* 月份下拉 */
     .dropdown {
       position: absolute;
       z-index: 3;
@@ -324,9 +102,9 @@
       text-align: center;
       display: inline-block;
     }
-
+    html.is-embed .dropdown { position: relative; right: auto; top: auto; }
     .dropbtn {
-      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      font-family: inherit;
       border: 1px solid var(--dark);
       padding: 10px 48px 10px 24px;
       background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403a39' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") 92% center no-repeat;
@@ -337,42 +115,32 @@
       color: var(--dark);
       font-size: 0.95rem;
     }
-
     .dropdown-content {
       display: none;
       position: absolute;
       width: 100%;
       border-radius: 20px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
       z-index: 5;
       max-height: 280px;
       overflow: auto;
       margin-top: 4px;
     }
-
     .dropdown:hover .dropdown-content,
-    .dropdown.open .dropdown-content {
-      display: block;
-    }
-
+    .dropdown.open .dropdown-content { display: block; }
     .dropdown-content a {
       color: #000;
       padding: 8px 16px;
       background: #fff;
       display: block;
-      font-family: "Noto Sans TC", sans-serif;
+      text-decoration: none;
       font-size: 0.92rem;
     }
-
     .dropdown-content a:first-child { border-radius: 20px 20px 0 0; }
     .dropdown-content a:last-child { border-radius: 0 0 20px 20px; }
     .dropdown-content a:hover,
-    .dropdown-content a.active {
-      background: var(--indigo);
-      color: #fff;
-    }
+    .dropdown-content a.active { background: var(--indigo); color: #fff; }
 
-    /* 活動列表：仿 FICHET act-list */
     .act-list ul {
       margin: 0 8%;
       padding: 0;
@@ -380,7 +148,7 @@
       display: flex;
       flex-wrap: wrap;
     }
-
+    html.is-embed .act-list ul { margin: 0; }
     .act-list li {
       background: var(--babyblue);
       padding: 20px;
@@ -388,13 +156,8 @@
       flex: 0 0 38%;
       margin: 0 20px 20px 100px;
       color: var(--dark);
-      animation: rise 0.45s ease both;
     }
-
-    .act-list li:nth-child(2n) {
-      margin-right: 0;
-    }
-
+    .act-list li:nth-child(2n) { margin-right: 0; }
     .act-list li .date {
       background: var(--blue);
       color: #fff;
@@ -411,29 +174,15 @@
       align-items: center;
       justify-content: center;
     }
-
-    .act-list li .date .text {
-      display: block;
-      width: 100%;
-      padding: 0 6px;
-    }
-
+    .act-list li .date .text { display: block; width: 100%; padding: 0 6px; }
     .act-list h4 {
-      margin: 0 0 15px;
+      margin: 0 0 12px;
       font-size: 1.05rem;
       font-weight: 700;
       line-height: 1.45;
     }
-
-    .act-list h4 a {
-      color: var(--dark);
-    }
-
-    .act-list h4 a:hover {
-      color: var(--indigo);
-      text-decoration: underline;
-    }
-
+    .act-list h4 a { color: var(--dark); text-decoration: none; }
+    .act-list h4 a:hover { color: var(--indigo); text-decoration: underline; }
     .act-list p {
       margin: 0;
       line-height: 1.6em;
@@ -441,7 +190,6 @@
       font-size: 0.95rem;
     }
 
-    /* 分頁列 */
     .pagenation {
       display: flex;
       flex-wrap: wrap;
@@ -450,14 +198,8 @@
       gap: 1rem;
       margin: 50px calc(8% + 20px) 40px 8%;
     }
-
-    .pagenation .dropdown {
-      position: relative;
-      right: auto;
-      top: auto;
-      min-width: 140px;
-    }
-
+    html.is-embed .pagenation { margin: 24px 0 8px; }
+    .pagenation .dropdown { position: relative; right: auto; top: auto; }
     .pagination {
       margin: 0;
       padding: 0;
@@ -465,15 +207,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      float: none;
     }
-
-    .pagination li {
-      line-height: 1.4;
-      color: var(--dark);
-      font-size: 0.95rem;
-    }
-
     .pagination button {
       border: none;
       background: transparent;
@@ -482,17 +216,9 @@
       font-size: 0.95rem;
       padding: 6px 10px;
       border-radius: 50em;
+      font-family: inherit;
     }
-
-    .pagination button:hover:not(:disabled) {
-      background: var(--babyblue);
-    }
-
-    .pagination button:disabled {
-      opacity: 0.35;
-      cursor: default;
-    }
-
+    .pagination button:disabled { opacity: 0.35; cursor: default; }
     .status {
       margin: 0 8% 0 calc(8% + 100px);
       padding: 2.5rem 1rem;
@@ -501,144 +227,40 @@
       background: var(--babyblue);
       border-radius: 0 0 0 30px;
     }
-
-    .status.error {
-      background: #ffe8e4;
-      color: #8a2f22;
-    }
-
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 992px) {
-      .act-list ul { margin: 0 2%; }
-      .act-list li { flex: 0 0 34%; }
-      .pagenation { margin-left: 2%; margin-right: 2%; }
-      .page-title .tablink { width: 70%; }
-    }
+    html.is-embed .status { margin-left: 100px; margin-right: 0; }
 
     @media (max-width: 768px) {
       .page-title {
         padding: 15px 20px;
         border-radius: 0 0 0 30px;
         margin-top: 0;
-        width: 100%;
       }
-
-      .page-title .row {
-        min-height: auto;
-        padding: 0;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
+      .page-title .row { flex-direction: column; align-items: flex-start; gap: 0.75rem; min-height: auto; }
       .page-title .col-title,
-      .page-title .col-filter {
-        flex: none;
-        max-width: 100%;
-        width: 100%;
-      }
-
-      .page-title h4 {
-        text-align: left;
-        font-size: 1.35em;
-      }
-
-      .page-title .source { text-align: left; }
-
+      .page-title .col-filter { flex: none; max-width: 100%; width: 100%; }
+      .page-title h4 { text-align: left; font-size: 1.35em; }
       .page-title .tablink { display: none; }
-
-      .dropdown {
-        position: relative;
-        right: auto;
-        top: auto;
-        min-width: 140px;
-      }
-
-      .act-list ul {
-        display: block;
-        margin: 0;
-      }
-
+      .dropdown { position: relative; right: auto; top: auto; }
+      .act-list ul { display: block; margin: 0; }
       .act-list li {
         width: calc(100% - 100px);
         flex: none;
         margin: 0 0 20px 100px;
       }
-
-      .pagenation {
-        margin: 30px 0 40px;
-      }
-
-      .status {
-        margin-left: 100px;
-        margin-right: 0;
-      }
+      .pagenation { margin: 30px 0 40px; }
     }
-
     @media (max-width: 520px) {
-      .act-list li {
-        margin-left: 72px;
-        width: calc(100% - 72px);
-        padding: 16px;
-      }
-
-      .act-list li .date {
-        width: 72px;
-        left: -72px;
-        font-size: 1em;
-      }
-
+      .act-list li { margin-left: 72px; width: calc(100% - 72px); padding: 16px; }
+      .act-list li .date { width: 72px; left: -72px; font-size: 1em; }
       .status { margin-left: 72px; }
-
-      .dropbtn {
-        padding: 6px 40px 6px 16px;
-        font-size: 0.85rem;
-      }
     }
   </style>
 </head>
 <body>
   <main class="container">
-    <div class="admin-only admin-bar" id="adminBar">
-      <strong>後台</strong>
-      <span class="hint">改完活動日後按「儲存並送出」。佛光嵌入頁看不到後台。</span>
-      <button type="button" id="connectBtn">連接 GitHub</button>
-      <button type="button" id="rescrapeBtn">重新撈取活動</button>
-      <button type="button" class="primary" id="saveBtn">儲存並送出</button>
-      <p class="admin-msg" id="adminMsg" hidden></p>
-    </div>
-
-    <div class="admin-only admin-modal-backdrop" id="tokenModal" hidden>
-      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="tokenModalTitle">
-        <h3 id="tokenModalTitle">第一次使用：連接你的 GitHub</h3>
-        <ol>
-          <li>點下方「開啟建立 Token 頁面」</li>
-          <li>確認權限有勾 <b>repo</b>、<b>workflow</b></li>
-          <li>按 Generate token，複製那串 <b>ghp_</b> 開頭的字</li>
-          <li>貼到下面空格，按儲存（只存在你這台瀏覽器）</li>
-        </ol>
-        <input id="tokenInput" type="password" autocomplete="off" placeholder="在這裡貼上 ghp_ 開頭的 Token" />
-        <div class="actions">
-          <a
-            href="https://github.com/settings/tokens/new?description=FGU-Sustainable-Event&scopes=repo,workflow"
-            target="_blank"
-            rel="noopener noreferrer"
-          >開啟建立 Token 頁面</a>
-          <button type="button" id="tokenCancelBtn">取消</button>
-          <button type="button" class="primary" id="tokenSaveBtn">儲存 Token</button>
-        </div>
-      </div>
-    </div>
-
     <section class="page-title indigo xdot">
       <div class="row">
-        <div class="col-title">
-          <h4>永續活動</h4>
-        </div>
+        <div class="col-title"><h4>永續活動</h4></div>
         <div class="col-filter">
           <div class="dropdown" id="monthDropdown">
             <button type="button" class="dropbtn" id="monthBtn">全部月份</button>
@@ -665,34 +287,82 @@
       </div>
       <ul class="pagination">
         <li id="pageInfo">1 / 1頁</li>
-        <li>
-          <button type="button" id="prevBtn" disabled>上一頁</button>
-        </li>
-        <li>
-          <button type="button" id="nextBtn" disabled>下一頁</button>
-        </li>
+        <li><button type="button" id="prevBtn" disabled>上一頁</button></li>
+        <li><button type="button" id="nextBtn" disabled>下一頁</button></li>
       </ul>
     </div>
   </main>
 
   <script>
-    const state = {
-      all: [],
-      filtered: [],
-      overrides: {},
-      month: "all",
-      rows: 10,
-      page: 1,
-      dirty: false,
-    };
+    // 活動資料寫死在此（日期／時間／地點已對過官網內文）
+    const EVENTS = [
+  {
+    "title": "🌱【ESG培力課程】永續報告書實戰解析：從合規到特色展現",
+    "date": "2026-09-23",
+    "month_label": "九月",
+    "day": "23",
+    "time": "13:30 - 16:30",
+    "location": "雲起樓 507 教室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%8C%B1-ESG%E5%9F%B9%E5%8A%9B%E8%AA%B2%E7%A8%8B-%E6%B0%B8%E7%BA%8C%E5%A0%B1%E5%91%8A%E6%9B%B8%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-%E5%BE%9E%E5%90%88%E8%A6%8F%E5%88%B0%E7%89%B9%E8%89%B2%E5%B1%95%E7%8F%BE-72919609"
+  },
+  {
+    "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！",
+    "date": "2026-09-08",
+    "month_label": "九月",
+    "day": "08",
+    "time": "第1場 9/8 09:00-12:00；第2場 9/24 09:00-12:00；第3場 9/30 12:00-15:00",
+    "location": "雲起樓 406 會議室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%94%A5-USR-%E8%A8%88%E7%95%AB%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%A4%A7%E5%8D%87%E7%B4%9A-SROI-%E5%AF%A6%E9%AB%94%E5%B7%A5%E4%BD%9C%E5%9D%8A%E9%87%8D%E7%A3%85%E7%99%BB%E5%A0%B4-61923572"
+  },
+  {
+    "title": "📢【高CP值培力】萬元級國際認證課免費聽！SROI 社會影響力實務講座",
+    "date": "2026-07-01",
+    "month_label": "七月",
+    "day": "01",
+    "time": "09:00 - 12:00",
+    "location": "雲起樓 301 會議廳",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%93%A2-%E9%AB%98CP%E5%80%BC%E5%9F%B9%E5%8A%9B-%E8%90%AC%E5%85%83%E7%B4%9A%E5%9C%8B%E9%9A%9B%E8%AA%8D%E8%AD%89%E8%AA%B2%E5%85%8D%E8%B2%BB%E8%81%BD-SROI-%E7%A4%BE%E6%9C%83%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%AF%A6%E5%8B%99%E8%AC%9B%E5%BA%A7-81418919"
+  },
+  {
+    "title": "【永續發展系列演講】氣候變遷的因應與調適—大學的社會責任（李鴻源教授主講）",
+    "date": "2026-05-27",
+    "month_label": "五月",
+    "day": "27",
+    "time": "13:10 - 15:10（12:40 開放進場）",
+    "location": "德香樓 B104 演講廳",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%E6%B0%A3%E5%80%99%E8%AE%8A%E9%81%B7%E7%9A%84%E5%9B%A0%E6%87%89%E8%88%87%E8%AA%BF%E9%81%A9%E2%80%94%E5%A4%A7%E5%AD%B8%E7%9A%84%E7%A4%BE%E6%9C%83%E8%B2%AC%E4%BB%BB%EF%BC%88%E6%9D%8E%E9%B4%BB%E6%BA%90%E6%95%99%E6%8E%88%E4%B8%BB%E8%AC%9B%EF%BC%89-75369999"
+  },
+  {
+    "title": "【地點改至雲起樓102教室】【永續發展系列演講】全球警告：氣候變遷（Colin Butler 教授）",
+    "date": "2026-05-13",
+    "month_label": "五月",
+    "day": "13",
+    "time": "13:10 起",
+    "location": "雲起樓 102 教室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E5%9C%B0%E9%BB%9E%E6%94%B9%E8%87%B3%E9%9B%B2%E8%B5%B7%E6%A8%93102%E6%95%99%E5%AE%A4-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%F0%9F%8C%8D%E5%85%A8%E7%90%83%E8%AD%A6%E5%91%8A-%E6%B0%A3%E5%80%99%E8%AE%8A%E9%81%B7-%E4%B8%8D%E5%8F%AA%E6%98%AF%E5%A4%A9%E6%B0%A3%E5%95%8F%E9%A1%8C-%E8%80%8C%E6%98%AF%E6%96%87%E6%98%8E%E5%AD%98%E7%BA%8C%E7%9A%84%E7%B5%82%E6%A5%B5%E8%80%83%E9%A9%97-%F0%9F%92%A5-41371253"
+  },
+  {
+    "title": "【培力講座】計畫績效翻轉：從 KPI 邁向 SROI 實戰解析",
+    "date": "2026-05-08",
+    "month_label": "五月",
+    "day": "08",
+    "time": "13:30 起",
+    "location": "雲起樓 309-1 教室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E5%9F%B9%E5%8A%9B%E8%AC%9B%E5%BA%A7-%E8%A8%88%E7%95%AB%E7%B8%BE%E6%95%88%E7%BF%BB%E8%BD%89-%E5%BE%9E-KPI-%E9%82%81%E5%90%91-SROI-%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-12168613"
+  },
+  {
+    "title": "【永續發展系列演講】永續共好，攜手前行 (SDGs x 大學使命)",
+    "date": "2025-10-22",
+    "month_label": "十月",
+    "day": "22",
+    "time": "12:10 - 14:10",
+    "location": "雲起樓 301 會議室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/Seminar/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%E6%B0%B8%E7%BA%8C%E5%85%B1%E5%A5%BD-%E6%94%9C%E6%89%8B%E5%89%8D%E8%A1%8C-SDGs-x-%E5%A4%A7%E5%AD%B8%E4%BD%BF%E5%91%BD-61109573"
+  }
+];
 
+    const state = { all: EVENTS.slice(), filtered: [], month: "all", rows: 10, page: 1 };
     const IS_EMBED = document.documentElement.classList.contains("is-embed");
-    const GH_OWNER = "Fgu-YTC";
-    const GH_REPO = "FGU-Sustainable-Event";
-    const GH_FILE = "overrides.json";
-    const GH_WORKFLOW = "scrape-and-deploy.yml";
-    const GH_BRANCH = "main";
-    const TOKEN_KEY = "fgu_sustainable_event_gh_token";
 
     function escapeHtml(str) {
       return String(str ?? "")
@@ -702,202 +372,73 @@
         .replace(/"/g, "&quot;");
     }
 
-    function setAdminMsg(text, isError) {
-      const el = document.getElementById("adminMsg");
-      if (!el) return;
-      if (!text) {
-        el.hidden = true;
-        el.textContent = "";
-        return;
-      }
-      el.hidden = false;
-      el.textContent = text;
-      el.classList.toggle("error", !!isError);
-    }
-
     function ymKey(ev) {
-      const d = ev.date_display || ev.date || "";
-      const m = String(d).match(/^(\d{4})-(\d{1,2})/);
-      if (!m) return "";
-      return m[1] + "-" + String(m[2]).padStart(2, "0");
+      const m = String(ev.date || "").match(/^(\d{4})-(\d{2})/);
+      return m ? m[1] + "-" + m[2] : "";
     }
 
     function detailText(ev) {
-      const date = ev.date_display || ev.date;
-      return date ? ("日期：" + date) : "";
-    }
-
-    function titleHtml(ev) {
-      const title = escapeHtml(ev.title || "（無標題）");
-      if (ev.link) {
-        return (
-          '<a href="' + escapeHtml(ev.link) +
-          '" target="_blank" rel="noopener noreferrer">' +
-          title + "</a>"
-        );
-      }
-      return title;
-    }
-
-    const MONTH_LABELS = {
-      1: "一月", 2: "二月", 3: "三月", 4: "四月", 5: "五月", 6: "六月",
-      7: "七月", 8: "八月", 9: "九月", 10: "十月", 11: "十一月", 12: "十二月",
-    };
-
-    function articleIdFromLink(link) {
-      const m = String(link || "").match(/-(\d+)\/?$/);
-      return m ? m[1] : "";
-    }
-
-    function applyDateParts(ev, ymd) {
-      const m = String(ymd || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (!m) return ev;
-      const month = Number(m[2]);
-      const day = String(Number(m[3])).padStart(2, "0");
-      const date = m[1] + "-" + String(month).padStart(2, "0") + "-" + day;
-      ev.date = date;
-      ev.date_display = date;
-      ev.month_label = MONTH_LABELS[month] || month + "月";
-      ev.day = day;
-      ev.detail_raw = "日期：" + date;
-      ev.date_source = "override";
-      return ev;
-    }
-
-    function mergeOverrides(events, overrides) {
-      const map = overrides && typeof overrides === "object" ? overrides : {};
-      return (events || []).map(function (ev) {
-        const id = articleIdFromLink(ev.link);
-        const row = id && map[id];
-        if (row && row.date) return applyDateParts(Object.assign({}, ev), row.date);
-        return ev;
-      });
-    }
-
-    function buildOverridesObject() {
-      const out = {
-        _readme:
-          "在 GitHub Pages 管理頁設定「列表顯示日期」。key 用網址最後的數字 ID。格式 YYYY-MM-DD。",
-      };
-      Object.keys(state.overrides || {}).forEach(function (key) {
-        if (key === "_readme") return;
-        const row = state.overrides[key];
-        if (row && typeof row === "object") {
-          out[key] = {
-            date: row.date || "",
-            note: row.note || "",
-          };
-        }
-      });
-      state.all.forEach(function (ev) {
-        const id = articleIdFromLink(ev.link);
-        if (!id || !ev.date) return;
-        out[id] = {
-          date: ev.date,
-          note:
-            (state.overrides[id] && state.overrides[id].note) ||
-            String(ev.title || "").slice(0, 40),
-        };
-      });
-      return out;
-    }
-
-    function buildMonthMenu() {
-      const keys = Array.from(
-        new Set(state.all.map(ymKey).filter(Boolean))
-      ).sort().reverse();
-
-      const menu = document.getElementById("monthMenu");
-      const items = ['<a href="#" data-month="all" class="active">全部月份</a>']
-        .concat(keys.map(function (k) {
-          return '<a href="#" data-month="' + k + '">' + k + "</a>";
-        }));
-      menu.innerHTML = items.join("");
-    }
-
-    function applyFilter() {
-      if (state.month === "all") {
-        state.filtered = state.all.slice();
-      } else {
-        state.filtered = state.all.filter(function (ev) {
-          return ymKey(ev) === state.month;
-        });
-      }
-      state.page = 1;
-      renderList();
+      const lines = [];
+      if (ev.date) lines.push("日期：" + ev.date);
+      if (ev.time) lines.push("時間：" + ev.time);
+      if (ev.location) lines.push("地點：" + ev.location);
+      return lines.join("\n");
     }
 
     function notifyParentHeight() {
-      if (!IS_EMBED) return;
-      if (window.parent === window) return;
-      const root = document.documentElement;
-      const body = document.body;
-      const height = Math.ceil(
-        Math.max(
-          root.scrollHeight,
-          body.scrollHeight,
-          root.offsetHeight,
-          body.offsetHeight
-        )
-      );
-      window.parent.postMessage(
-        { source: "sdgs-activity", type: "resize", height: height },
-        "*"
-      );
+      if (!IS_EMBED || window.parent === window) return;
+      const h = Math.ceil(Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight
+      ));
+      window.parent.postMessage({ source: "sdgs-activity", type: "resize", height: h }, "*");
     }
 
-    function adminDateHtml(ev) {
-      if (IS_EMBED) return "";
-      const id = articleIdFromLink(ev.link);
-      if (!id) return "";
-      return (
-        '<div class="admin-only admin-date">' +
-          "<label>活動日 " +
-          '<input type="date" data-id="' + escapeHtml(id) + '" value="' +
-          escapeHtml(ev.date || "") + '" />' +
-          "</label>" +
-        "</div>"
-      );
+    function buildMonthMenu() {
+      const keys = Array.from(new Set(state.all.map(ymKey).filter(Boolean))).sort().reverse();
+      document.getElementById("monthMenu").innerHTML =
+        '<a href="#" data-month="all" class="active">全部月份</a>' +
+        keys.map(function (k) {
+          return '<a href="#" data-month="' + k + '">' + k + "</a>";
+        }).join("");
+    }
+
+    function applyFilter() {
+      state.filtered = state.month === "all"
+        ? state.all.slice()
+        : state.all.filter(function (ev) { return ymKey(ev) === state.month; });
+      state.page = 1;
+      renderList();
     }
 
     function renderList() {
       const root = document.getElementById("root");
       const pager = document.getElementById("pager");
-      const total = state.filtered.length;
-      const pages = Math.max(1, Math.ceil(total / state.rows) || 1);
-
+      const pages = Math.max(1, Math.ceil(state.filtered.length / state.rows) || 1);
       if (state.page > pages) state.page = pages;
 
-      if (!total) {
+      if (!state.filtered.length) {
         root.innerHTML = '<div class="status">此條件下沒有活動資料</div>';
         pager.hidden = true;
-        requestAnimationFrame(notifyParentHeight);
+        notifyParentHeight();
         return;
       }
 
       const start = (state.page - 1) * state.rows;
       const slice = state.filtered.slice(start, start + state.rows);
-
-      const items = slice.map(function (ev, i) {
-        const month = escapeHtml(ev.month_label || "");
-        const day = escapeHtml(ev.day || "");
-        const detail = escapeHtml(detailText(ev));
-        const delay = Math.min(i * 0.04, 0.35);
+      root.innerHTML = "<ul>" + slice.map(function (ev) {
         return (
-          '<li style="animation-delay:' + delay + 's">' +
-            '<div class="date"><div class="text">' + month + "<br>" + day + "</div></div>" +
-            "<h4>" + titleHtml(ev) + "</h4>" +
-            "<p>" + detail + "</p>" +
-            adminDateHtml(ev) +
+          "<li>" +
+            '<div class="date"><div class="text">' + escapeHtml(ev.month_label) + "<br>" + escapeHtml(ev.day) + "</div></div>" +
+            "<h4><a href=\"" + escapeHtml(ev.link) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" +
+              escapeHtml(ev.title) + "</a></h4>" +
+            "<p>" + escapeHtml(detailText(ev)) + "</p>" +
           "</li>"
         );
-      }).join("");
+      }).join("") + "</ul>";
 
-      root.innerHTML = "<ul>" + items + "</ul>";
       pager.hidden = false;
-
-      document.getElementById("pageInfo").textContent =
-        state.page + " / " + pages + "頁";
+      document.getElementById("pageInfo").textContent = state.page + " / " + pages + "頁";
       document.getElementById("prevBtn").disabled = state.page <= 1;
       document.getElementById("nextBtn").disabled = state.page >= pages;
       document.getElementById("rowsBtn").textContent = "一頁" + state.rows + "筆";
@@ -907,257 +448,52 @@
       });
     }
 
-    function updateEventDate(id, ymd) {
-      state.all.forEach(function (ev) {
-        if (articleIdFromLink(ev.link) === id) applyDateParts(ev, ymd);
+    document.getElementById("monthMenu").addEventListener("click", function (e) {
+      const a = e.target.closest("a[data-month]");
+      if (!a) return;
+      e.preventDefault();
+      state.month = a.getAttribute("data-month");
+      document.getElementById("monthBtn").textContent =
+        state.month === "all" ? "全部月份" : state.month;
+      this.querySelectorAll("a").forEach(function (el) {
+        el.classList.toggle("active", el === a);
       });
-      if (!state.overrides[id] || typeof state.overrides[id] !== "object") {
-        state.overrides[id] = { date: ymd, note: "" };
-      } else {
-        state.overrides[id].date = ymd;
-      }
-      state.dirty = true;
-      setAdminMsg("已修改，請按「儲存並送出」。");
-      buildMonthMenu();
       applyFilter();
-    }
+    });
 
-    function getToken() {
-      return localStorage.getItem(TOKEN_KEY) || "";
-    }
+    document.getElementById("rowsMenu").addEventListener("click", function (e) {
+      const a = e.target.closest("a[data-rows]");
+      if (!a) return;
+      e.preventDefault();
+      state.rows = Number(a.getAttribute("data-rows")) || 10;
+      state.page = 1;
+      renderList();
+    });
 
-    function openTokenModal() {
-      const modal = document.getElementById("tokenModal");
-      const input = document.getElementById("tokenInput");
-      input.value = getToken();
-      modal.hidden = false;
-      input.focus();
-    }
+    document.getElementById("prevBtn").addEventListener("click", function () {
+      if (state.page > 1) { state.page -= 1; renderList(); }
+    });
+    document.getElementById("nextBtn").addEventListener("click", function () {
+      const pages = Math.max(1, Math.ceil(state.filtered.length / state.rows));
+      if (state.page < pages) { state.page += 1; renderList(); }
+    });
 
-    function closeTokenModal() {
-      document.getElementById("tokenModal").hidden = true;
-    }
-
-    function saveTokenFromModal() {
-      const value = document.getElementById("tokenInput").value.trim();
-      if (!value) {
-        setAdminMsg("請先貼上 Token。", true);
-        return false;
-      }
-      if (!/^gh[pousr]_/.test(value) && !value.startsWith("github_pat_")) {
-        setAdminMsg("格式看起來不對，請貼 ghp_ 或 github_pat_ 開頭的 Token。", true);
-        return false;
-      }
-      localStorage.setItem(TOKEN_KEY, value);
-      closeTokenModal();
-      setAdminMsg("已連接 GitHub。現在改日期後可直接按「儲存並送出」。");
-      return true;
-    }
-
-    function ensureToken() {
-      if (getToken()) return true;
-      openTokenModal();
-      setAdminMsg("請先完成「連接 GitHub」（只要做一次）。", true);
-      return false;
-    }
-
-    function utf8ToBase64(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
-
-    async function saveToGithub() {
-      if (!ensureToken()) return;
-      const token = getToken();
-      const btn = document.getElementById("saveBtn");
-      btn.disabled = true;
-      setAdminMsg("送出中…");
-
-      const apiBase =
-        "https://api.github.com/repos/" +
-        GH_OWNER + "/" + GH_REPO + "/contents/" + GH_FILE;
-      const headers = {
-        Accept: "application/vnd.github+json",
-        Authorization: "Bearer " + token,
-        "X-GitHub-Api-Version": "2022-11-28",
-      };
-
-      try {
-        let sha = "";
-        const getRes = await fetch(apiBase + "?ref=" + GH_BRANCH, { headers: headers });
-        if (getRes.ok) {
-          const meta = await getRes.json();
-          sha = meta.sha || "";
-        } else if (getRes.status !== 404) {
-          throw new Error("讀取失敗 HTTP " + getRes.status + "（Token 權限可能不足）");
-        }
-
-        const payload = buildOverridesObject();
-        const body = {
-          message: "chore: update activity dates from Pages admin",
-          content: utf8ToBase64(JSON.stringify(payload, null, 2) + "\n"),
-          branch: GH_BRANCH,
-        };
-        if (sha) body.sha = sha;
-
-        const putRes = await fetch(apiBase, {
-          method: "PUT",
-          headers: Object.assign({ "Content-Type": "application/json" }, headers),
-          body: JSON.stringify(body),
-        });
-        if (!putRes.ok) {
-          const errText = await putRes.text();
-          throw new Error("儲存失敗 HTTP " + putRes.status + " " + errText.slice(0, 160));
-        }
-
-        state.dirty = false;
-        state.overrides = payload;
-        setAdminMsg("已送出！約 1～2 分鐘後佛光嵌入頁會更新。");
-      } catch (err) {
-        setAdminMsg(String(err.message || err), true);
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function rescrapeActivities() {
-      if (!ensureToken()) return;
-      const token = getToken();
-      const btn = document.getElementById("rescrapeBtn");
-      btn.disabled = true;
-      setAdminMsg("正在觸發重新撈取…");
-
-      const url =
-        "https://api.github.com/repos/" +
-        GH_OWNER + "/" + GH_REPO +
-        "/actions/workflows/" + GH_WORKFLOW + "/dispatches";
-
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: "Bearer " + token,
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ ref: GH_BRANCH }),
-        });
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error("觸發失敗 HTTP " + res.status + " " + errText.slice(0, 160));
-        }
-        setAdminMsg("已開始重新撈取。約 1～2 分鐘後按 F5 重整。");
-      } catch (err) {
-        setAdminMsg(String(err.message || err), true);
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    function bindUi() {
-      document.getElementById("monthMenu").addEventListener("click", function (e) {
-        const a = e.target.closest("a[data-month]");
-        if (!a) return;
-        e.preventDefault();
-        state.month = a.getAttribute("data-month");
-        document.getElementById("monthBtn").textContent =
-          state.month === "all" ? "全部月份" : state.month;
-        this.querySelectorAll("a").forEach(function (el) {
-          el.classList.toggle("active", el === a);
-        });
-        applyFilter();
+    ["monthDropdown", "rowsDropdown"].forEach(function (id) {
+      const el = document.getElementById(id);
+      el.querySelector(".dropbtn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        el.classList.toggle("open");
       });
-
-      document.getElementById("rowsMenu").addEventListener("click", function (e) {
-        const a = e.target.closest("a[data-rows]");
-        if (!a) return;
-        e.preventDefault();
-        state.rows = Number(a.getAttribute("data-rows")) || 10;
-        state.page = 1;
-        renderList();
+    });
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".dropdown.open").forEach(function (el) {
+        el.classList.remove("open");
       });
-
-      document.getElementById("prevBtn").addEventListener("click", function () {
-        if (state.page > 1) {
-          state.page -= 1;
-          renderList();
-        }
-      });
-
-      document.getElementById("nextBtn").addEventListener("click", function () {
-        const pages = Math.max(1, Math.ceil(state.filtered.length / state.rows));
-        if (state.page < pages) {
-          state.page += 1;
-          renderList();
-        }
-      });
-
-      ["monthDropdown", "rowsDropdown"].forEach(function (id) {
-        const el = document.getElementById(id);
-        el.querySelector(".dropbtn").addEventListener("click", function (e) {
-          e.stopPropagation();
-          el.classList.toggle("open");
-        });
-      });
-      document.addEventListener("click", function () {
-        document.querySelectorAll(".dropdown.open").forEach(function (el) {
-          el.classList.remove("open");
-        });
-      });
-
-      if (!IS_EMBED) {
-        document.getElementById("root").addEventListener("change", function (e) {
-          const input = e.target.closest('input[type="date"][data-id]');
-          if (!input) return;
-          updateEventDate(input.getAttribute("data-id"), input.value);
-        });
-        document.getElementById("connectBtn").addEventListener("click", openTokenModal);
-        document.getElementById("saveBtn").addEventListener("click", saveToGithub);
-        document.getElementById("rescrapeBtn").addEventListener("click", rescrapeActivities);
-        document.getElementById("tokenCancelBtn").addEventListener("click", closeTokenModal);
-        document.getElementById("tokenSaveBtn").addEventListener("click", saveTokenFromModal);
-        document.getElementById("tokenModal").addEventListener("click", function (e) {
-          if (e.target === this) closeTokenModal();
-        });
-      }
-    }
-
-    bindUi();
+    });
     window.addEventListener("resize", notifyParentHeight);
 
-    Promise.all([
-      fetch("events.json").then(function (res) {
-        if (!res.ok) throw new Error("events.json HTTP " + res.status);
-        return res.json();
-      }),
-      fetch("overrides.json")
-        .then(function (res) {
-          if (!res.ok) return {};
-          return res.json();
-        })
-        .catch(function () {
-          return {};
-        }),
-    ])
-      .then(function (pair) {
-        const events = pair[0];
-        const overrides = pair[1] || {};
-        state.overrides = overrides;
-        state.all = mergeOverrides(
-          Array.isArray(events) ? events : [],
-          overrides
-        );
-        buildMonthMenu();
-        applyFilter();
-        notifyParentHeight();
-      })
-      .catch(function (err) {
-        document.getElementById("root").innerHTML =
-          '<div class="status error">無法讀取資料（' +
-          escapeHtml(err.message) +
-          "）。請確認 events.json 是否存在。</div>";
-        notifyParentHeight();
-      });
+    buildMonthMenu();
+    applyFilter();
   </script>
 </body>
 </html>
