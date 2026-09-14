@@ -22,9 +22,6 @@ python -m http.server 8080
 
 目標頁：https://sdgs.fgu.edu.tw/zh_tw/announcement/test
 
-1. 登入官網後台，編輯該頁內容  
-2. 把頁面標題 `test` 改成 `永續活動`（可選）  
-3. 用「原始碼／HTML」模式，把原本的 `123` 換成 `orbit-paste-snippet.html` 裡的內容  
-4. 儲存後重新整理頁面  
-
-嵌入後會載入 GitHub Pages，資料仍由 Actions 自動更新。
+1. 在 GitHub 編輯 `overrides.json` 設定各篇「列表顯示日期」（用文章網址結尾數字當 key）  
+2. 官網後台只貼 `orbit-paste-snippet.html` 裡的 iframe（顯示頁沒有手動選日期 UI）  
+3. 建議把頁面標題 `test` 改成 `永續活動`

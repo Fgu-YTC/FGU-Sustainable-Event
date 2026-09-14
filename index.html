@@ -527,6 +527,41 @@
       return title;
     }
 
+    const MONTH_LABELS = {
+      1: "一月", 2: "二月", 3: "三月", 4: "四月", 5: "五月", 6: "六月",
+      7: "七月", 8: "八月", 9: "九月", 10: "十月", 11: "十一月", 12: "十二月",
+    };
+
+    function articleIdFromLink(link) {
+      const m = String(link || "").match(/-(\d+)\/?$/);
+      return m ? m[1] : "";
+    }
+
+    function applyDateParts(ev, ymd) {
+      const m = String(ymd || "").match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (!m) return ev;
+      const month = Number(m[2]);
+      const day = String(Number(m[3])).padStart(2, "0");
+      const date = m[1] + "-" + String(month).padStart(2, "0") + "-" + day;
+      ev.date = date;
+      ev.date_display = date;
+      ev.month_label = MONTH_LABELS[month] || month + "月";
+      ev.day = day;
+      ev.detail_raw = "日期：" + date;
+      ev.date_source = "override";
+      return ev;
+    }
+
+    function mergeOverrides(events, overrides) {
+      const map = overrides && typeof overrides === "object" ? overrides : {};
+      return (events || []).map(function (ev) {
+        const id = articleIdFromLink(ev.link);
+        const row = id && map[id];
+        if (row && row.date) return applyDateParts(Object.assign({}, ev), row.date);
+        return ev;
+      });
+    }
+
     function buildMonthMenu() {
       const keys = Array.from(
         new Set(state.all.map(ymKey).filter(Boolean))
@@ -648,21 +683,35 @@
 
     bindUi();
 
-    fetch("events.json")
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
+    Promise.all([
+      fetch("events.json").then(function (res) {
+        if (!res.ok) throw new Error("events.json HTTP " + res.status);
         return res.json();
-      })
-      .then(function (events) {
-        state.all = Array.isArray(events) ? events : [];
+      }),
+      fetch("overrides.json")
+        .then(function (res) {
+          if (!res.ok) return {};
+          return res.json();
+        })
+        .catch(function () {
+          return {};
+        }),
+    ])
+      .then(function (pair) {
+        const events = pair[0];
+        const overrides = pair[1];
+        state.all = mergeOverrides(
+          Array.isArray(events) ? events : [],
+          overrides
+        );
         buildMonthMenu();
         applyFilter();
       })
       .catch(function (err) {
         document.getElementById("root").innerHTML =
-          '<div class="status error">無法讀取 events.json（' +
+          '<div class="status error">無法讀取資料（' +
           escapeHtml(err.message) +
-          "）。請用本機伺服器開啟，並先執行爬蟲。</div>";
+          "）。請確認 events.json 是否存在。</div>";
       });
   </script>
 </body>
