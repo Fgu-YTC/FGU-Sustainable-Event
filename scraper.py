@@ -18,6 +18,9 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
+from urllib3.exceptions import InsecureRequestWarning
+
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 BASE_URL = "https://sdgs.fgu.edu.tw"
 NEWS_URL = f"{BASE_URL}/zh_tw/announcement/News"
@@ -81,7 +84,12 @@ def clean_time_text(value: str) -> str:
 
 
 def get_soup(url: str) -> BeautifulSoup:
-    response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    response = requests.get(
+        url,
+        headers=HEADERS,
+        timeout=REQUEST_TIMEOUT,
+        verify=False,
+    )
     response.raise_for_status()
     # 官網為 UTF-8；勿用 apparent_encoding（Actions 上易誤判成亂碼）
     response.encoding = "utf-8"
