@@ -71,6 +71,11 @@ TIME_RANGE_RE = re.compile(
 )
 CLOCK_RE = re.compile(r"\d{1,2}:\d{2}")
 SESSION_RE = re.compile(r"【第\s*(\d+)\s*場】\s*([^\n]+)")
+# 「第 1 場次：……」到下一場之前
+SESSION_BLOCK_RE = re.compile(
+    r"第\s*(\d+)\s*場次?\s*[：:](?P<body>.*?)(?=第\s*\d+\s*場次?\s*[：:]|\Z)",
+    re.S,
+)
 ADMISSION_NOTE_RE = re.compile(
     r"\s*[（(][^）)]*開放進場[^）)]*[）)]"
 )
@@ -195,38 +200,77 @@ def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
     return post, "post_date"
 
 
-def parse_sessions(content_text: str, fallback_year: str) -> list[dict]:
-    """多場次工作坊：拆成第1場、第2場…各自日期與時間。"""
-    text = content_text or ""
-    raw_sessions = SESSION_RE.findall(text)
-    if len(raw_sessions) < 2:
-        return []
-
+def _session_year(fallback_year: str) -> int:
     year_m = re.match(r"^(\d{4})", (fallback_year or "").strip())
-    year = int(year_m.group(1)) if year_m else 2026
+    return int(year_m.group(1)) if year_m else 2026
+
+
+def _session_from_chunk(num: str, chunk: str, year: int) -> dict | None:
+    chunk = clean_time_text(chunk)
+    dm = re.search(
+        r"(?:日期時間|活動時間|時間|日期)\s*[：:]\s*"
+        r"(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*日",
+        chunk,
+    )
+    if dm and dm.group(1):
+        y = int(dm.group(1))
+        if y < 1911:
+            y += 1911
+        iso = _valid_iso(y, int(dm.group(2)), int(dm.group(3)))
+    elif dm:
+        iso = _valid_iso(year, int(dm.group(2)), int(dm.group(3)))
+    else:
+        dm = re.search(r"(\d{1,2})\s*/\s*(\d{1,2})", chunk)
+        iso = _valid_iso(year, int(dm.group(1)), int(dm.group(2))) if dm else None
+    tm = TIME_RANGE_RE.search(chunk)
+    if not iso or not tm:
+        return None
+    date_display, month_label, day = parse_date_parts(iso)
+    loc_m = re.search(r"(?:講座地點|地點)\s*[：:]\s*([^\n]+)", chunk)
+    location = ""
+    if loc_m:
+        location = re.sub(r"^[：:\s•·]+", "", loc_m.group(1)).strip()
+        location = re.split(
+            r"\s*(?:🔗|※|主辦單位|聯絡人|📌|【)",
+            location,
+            maxsplit=1,
+        )[0].strip()
+        location = re.sub(r"\s+", " ", location)
+    return {
+        "session": int(num),
+        "date": date_display,
+        "month_label": month_label,
+        "day": day,
+        "time": f"{tm.group(1)} - {tm.group(2)}",
+        "location": location,
+    }
+
+
+def parse_sessions(content_text: str, fallback_year: str) -> list[dict]:
+    """多場次：拆成第1場、第2場…各自日期、時間與地點。"""
+    text = content_text or ""
+    year = _session_year(fallback_year)
     parsed: list[dict] = []
 
+    blocks = SESSION_BLOCK_RE.findall(text)
+    if len(blocks) >= 2:
+        for num, body in blocks:
+            item = _session_from_chunk(num, body, year)
+            if item:
+                parsed.append(item)
+        if len(parsed) >= 2:
+            return parsed
+
+    raw_sessions = SESSION_RE.findall(text)
+    if len(raw_sessions) < 2:
+        return parsed
+    parsed = []
     for num, rest in raw_sessions:
         rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
-        rest = clean_time_text(rest)
-        dm = re.search(r"(\d{1,2})\s*/\s*(\d{1,2})", rest)
-        tm = TIME_RANGE_RE.search(rest)
-        if not dm or not tm:
-            continue
-        iso = _valid_iso(year, int(dm.group(1)), int(dm.group(2)))
-        if not iso:
-            continue
-        date_display, month_label, day = parse_date_parts(iso)
-        parsed.append(
-            {
-                "session": int(num),
-                "date": date_display,
-                "month_label": month_label,
-                "day": day,
-                "time": f"{tm.group(1)} - {tm.group(2)}",
-            }
-        )
-    return parsed
+        item = _session_from_chunk(num, rest, year)
+        if item:
+            parsed.append(item)
+    return parsed if len(parsed) >= 2 else []
 
 
 def expand_multi_session(event: dict, content_text: str) -> list[dict]:
@@ -252,6 +296,8 @@ def expand_multi_session(event: dict, content_text: str) -> list[dict]:
                 "date_source": "content_session",
             }
         )
+        if s.get("location"):
+            item["location"] = s["location"]
         expanded.append(item)
     return expanded
 
@@ -295,7 +341,7 @@ def extract_time(content_text: str) -> str:
 def extract_location(content_text: str) -> str:
     text = content_text or ""
     # 必須有冒號，避免「時程與地點」誤判
-    m = re.search(r"(?:📍\s*)?地點\s*[：:]\s*\n?\s*([^\n]+)", text)
+    m = re.search(r"(?:📍\s*)?(?:講座地點|地點)\s*[：:]\s*\n?\s*([^\n]+)", text)
     if not m:
         return ""
     loc = m.group(1).strip()
