@@ -556,21 +556,53 @@
     }
 
     function sortKey(ev) {
-      // 多場次以最後一場排序，與 Coming Soon 分類一致
       return eventEndDate(ev) || String(ev.date || "");
     }
 
+    function seriesKey(ev) {
+      return ev.link || String(ev.title || "").replace(/（第\d+場）$/, "");
+    }
+
+    function itemKey(ev) {
+      return seriesKey(ev) + "|" + String(ev.date || "") + "|" + String(ev.session || "");
+    }
+
+    /** 同一篇拆成多場時，Coming Soon 只顯示下一場尚未結束的場次 */
+    function nextUpcoming(list) {
+      const groups = {};
+      list.forEach(function (ev) {
+        const k = seriesKey(ev);
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(ev);
+      });
+      const show = {};
+      Object.keys(groups).forEach(function (k) {
+        const items = groups[k];
+        const upcoming = items.filter(isComing).slice().sort(function (a, b) {
+          const byDate = String(a.date || "").localeCompare(String(b.date || ""));
+          if (byDate !== 0) return byDate;
+          return (Number(a.session) || 0) - (Number(b.session) || 0);
+        });
+        if (!upcoming.length) return;
+        const multi = items.length > 1 && items.some(function (ev) { return ev.session; });
+        if (multi) {
+          show[itemKey(upcoming[0])] = true;
+        } else {
+          upcoming.forEach(function (ev) { show[itemKey(ev)] = true; });
+        }
+      });
+      return list.filter(function (ev) { return show[itemKey(ev)]; });
+    }
+
+    function byNewest(a, b) {
+      const byDate = sortKey(b).localeCompare(sortKey(a));
+      if (byDate !== 0) return byDate;
+      return String(b.post_date || "").localeCompare(String(a.post_date || ""));
+    }
+
     function buildTabPool() {
-      const coming = state.all.filter(isComing).slice().sort(function (a, b) {
-        const byDate = sortKey(b).localeCompare(sortKey(a));
-        if (byDate !== 0) return byDate;
-        return String(b.post_date || "").localeCompare(String(a.post_date || ""));
-      });
-      const past = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(function (a, b) {
-        const byDate = sortKey(b).localeCompare(sortKey(a));
-        if (byDate !== 0) return byDate;
-        return String(b.post_date || "").localeCompare(String(a.post_date || ""));
-      });
+      const coming = nextUpcoming(state.all).sort(byNewest);
+      const past = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(byNewest);
       state.tabPool = state.tab === "coming" ? coming : past;
     }
 
