@@ -1,11 +1,14 @@
 """
-永續活動爬蟲：
-1. 從「最新消息」與「永續活動」標籤頁收集候選網址
-2. 合併上次 events.json／種子網址（避免列表暫未顯示的文章漏抓）
-3. 內頁需有「永續活動」標籤才收錄（不抓研討會分類）
-4. 從內文解析活動日、時間（含多場次）、地點 → 寫入 events.json
+佛光大學永續發展辦公室 — 永續活動自動爬蟲（升級版）
 
-本機：python scraper.py
+工作流程：
+1. 直接爬取官網「永續活動」標籤頁（支援 &page_no=N 自動翻頁，不重爬無關新聞稿）
+2. 逐篇進入活動內頁，複驗「永續活動」標籤並精準擷取標題、發文日與結構化內文
+3. 智慧解析活動日期（支援西元／民國／跨年推算，避開報名截止日）、時間（含上下午與單一時間）、
+   地點（支援線上／括號說明）及多場次拆項（支援【第1場】、第1場次、第一場、場次一等）
+4. 寫入 events.json 供前端顯示（Coming Soon / 歷年活動）
+
+本機執行：python scraper.py
 """
 
 from __future__ import annotations
@@ -13,23 +16,21 @@ from __future__ import annotations
 import json
 import re
 import time
+from datetime import date as dt_date
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 BASE_URL = "https://sdgs.fgu.edu.tw"
 NEWS_URL = f"{BASE_URL}/zh_tw/announcement/News"
-TAG_URL = (
-    f"{BASE_URL}/zh_tw/announcement/News"
-    f"?tags%5B%5D=6aa249da434ade0ee2b15128"
-)
 REQUIRED_TAG = "永續活動"
 REQUIRED_TAG_ID = "6aa249da434ade0ee2b15128"
+TAG_URL = f"{NEWS_URL}?tags%5B%5D={REQUIRED_TAG_ID}"
 OUTPUT_PATH = Path(__file__).resolve().parent / "events.json"
 
 HEADERS = {
@@ -41,15 +42,8 @@ HEADERS = {
     "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
 }
 REQUEST_TIMEOUT = 30
-DELAY_SECONDS = 0.4
-MAX_PAGES = 20
-
-SEED_URLS = [
-    "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/"
-    "%F0%9F%8C%B1-ESG%E5%9F%B9%E5%8A%9B%E8%AA%B2%E7%A8%8B-"
-    "%E6%B0%B8%E7%BA%8C%E5%A0%B1%E5%91%8A%E6%9B%B8%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-"
-    "%E5%BE%9E%E5%90%88%E8%A6%8F%E5%88%B0%E7%89%B9%E8%89%B2%E5%B1%95%E7%8F%BE-72919609",
-]
+DELAY_SECONDS = 0.35
+MAX_PAGES = 30
 
 MONTH_LABELS = {
     1: "一月",
@@ -66,25 +60,71 @@ MONTH_LABELS = {
     12: "十二月",
 }
 
-TIME_RANGE_RE = re.compile(
-    r"(\d{1,2}:\d{2})\s*[-–—~〜～至到]\s*(?:上午|下午|中午)?\s*(\d{1,2}:\d{2})"
+ZH_NUM_MAP = {
+    "一": 1,
+    "二": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+    "十": 10,
+}
+
+BLOCK_TAGS = {
+    "p", "div", "li", "tr", "br", "hr",
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "blockquote", "section", "article", "header", "footer", "table",
+}
+
+DEADLINE_LINE_RE = re.compile(r"(?:報名)?截止|截止(?:時間|日期)|報名期限|報名期間")
+EVENT_DATE_LABEL_RE = re.compile(
+    r"(?:活動日期時間|活動日期|活動時間|講座日期|講座時間|日期時間|時間|日期)\s*[：:]"
 )
-CLOCK_RE = re.compile(r"\d{1,2}:\d{2}")
-SESSION_RE = re.compile(r"【第\s*(\d+)\s*場】\s*([^\n]+)")
-# 「第 1 場次：……」到下一場之前
+TIME_RANGE_RE = re.compile(
+    r"(?:(上午|下午|中午|晚間|晚上)\s*)?(\d{1,2})\s*[:：]\s*(\d{2})"
+    r"\s*[-–—~〜～至到]\s*"
+    r"(?:(上午|下午|中午|晚間|晚上)\s*)?(\d{1,2})\s*[:：]\s*(\d{2})"
+)
+TIME_SINGLE_RE = re.compile(
+    r"(?:(上午|下午|中午|晚間|晚上)\s*)?(\d{1,2})\s*[:：]\s*(\d{2})"
+)
+ADMISSION_NOTE_RE = re.compile(r"\s*[（(][^）)]*(?:開放進場|報到|入場)[^）)]*[）)]")
+
+# 支援：【第 1 場】、【第一場】、第 1 場次：、第一場：、場次 1：、場次一：
+SESSION_INLINE_RE = re.compile(
+    r"【\s*(?:第\s*([0-9]+|[一二三四五六七八九十])\s*場次?|場次\s*([0-9]+|[一二三四五六七八九十]))\s*】\s*([^\n]+)"
+)
 SESSION_BLOCK_RE = re.compile(
-    r"第\s*(\d+)\s*場次?\s*[：:](?P<body>.*?)(?=第\s*\d+\s*場次?\s*[：:]|\Z)",
+    r"(?:📌\s*)?(?:第\s*([0-9]+|[一二三四五六七八九十])\s*場次?|場次\s*([0-9]+|[一二三四五六七八九十]))\s*[：:]"
+    r"(?P<body>.*?)(?=(?:📌\s*)?(?:第\s*(?:[0-9]+|[一二三四五六七八九十])\s*場次?|場次\s*(?:[0-9]+|[一二三四五六七八九十]))\s*[：:]|\Z)",
     re.S,
 )
-ADMISSION_NOTE_RE = re.compile(
-    r"\s*[（(][^）)]*開放進場[^）)]*[）)]"
-)
+
+
+def parse_session_num(token: str) -> int:
+    token = (token or "").strip()
+    if token.isdigit():
+        return int(token)
+    return ZH_NUM_MAP.get(token, 0)
+
+
+def _to_24h(period: str | None, hour_s: str, min_s: str) -> str:
+    h = int(hour_s)
+    m = int(min_s)
+    if period in ("下午", "晚間", "晚上") and 1 <= h <= 11:
+        h += 12
+    elif period == "上午" and h == 12:
+        h = 0
+    return f"{h:02d}:{m:02d}"
 
 
 def clean_time_text(value: str) -> str:
-    """只保留幾點到幾點，去掉開放進場等括號說明。"""
+    """移除（12:40開放進場）等括號附註並壓縮空白。"""
     text = ADMISSION_NOTE_RE.sub("", value or "")
-    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"[ \t]+", " ", text).strip()
     return text
 
 
@@ -96,9 +136,16 @@ def get_soup(url: str) -> BeautifulSoup:
         verify=False,
     )
     response.raise_for_status()
-    # 官網為 UTF-8；勿用 apparent_encoding（Actions 上易誤判成亂碼）
     response.encoding = "utf-8"
     return BeautifulSoup(response.content, "html.parser", from_encoding="utf-8")
+
+
+def with_query_param(url: str, key: str, value: str | int) -> str:
+    """安全附加或替換網址查詢參數（避免重複出現兩個 '?'）。"""
+    parts = urlsplit(url)
+    params = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k != key]
+    params.append((key, str(value)))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), ""))
 
 
 def normalize_link(url: str) -> str:
@@ -123,6 +170,51 @@ def article_key(url: str) -> str:
     return m.group(1) if m else norm
 
 
+def extract_clean_text(container: Tag | None) -> str:
+    """
+    保留段落換行，但不把 <strong>時間</strong>：... 這類行內元素切斷成兩行。
+    """
+    if not container:
+        return ""
+    parts: list[str] = []
+
+    def walk(node: Tag | NavigableString) -> None:
+        if isinstance(node, NavigableString):
+            txt = str(node).replace("\xa0", " ")
+            parts.append(txt)
+            return
+        if not isinstance(node, Tag):
+            return
+        name = (node.name or "").lower()
+        if name in ("script", "style", "noscript"):
+            return
+        if name == "br":
+            parts.append("\n")
+            return
+        is_block = name in BLOCK_TAGS
+        if is_block:
+            parts.append("\n")
+        for child in node.children:
+            walk(child)
+        if is_block:
+            parts.append("\n")
+
+    walk(container)
+    raw = "".join(parts)
+    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in raw.splitlines()]
+    lines = [ln for ln in lines if ln]
+    # 若出現「地點：」後換行接內容，或「時間」換行接「：...」，適度合併相鄰斷行
+    merged: list[str] = []
+    for ln in lines:
+        if merged and re.match(r"^[：:]", ln):
+            merged[-1] = merged[-1] + ln
+        elif merged and re.match(r"^(?:[◆•📍⏰🗓]\s*)?(?:活動)?(?:時間|日期|日期時間|講座地點|活動地點|地點)\s*[：:]\s*$", merged[-1]):
+            merged[-1] = merged[-1] + " " + ln
+        else:
+            merged.append(ln)
+    return "\n".join(merged)
+
+
 def parse_date_parts(date_str: str) -> tuple[str, str, str]:
     date_str = (date_str or "").strip()
     match = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})", date_str)
@@ -139,145 +231,191 @@ def parse_date_parts(date_str: str) -> tuple[str, str, str]:
 
 
 def _valid_iso(y: int, mo: int, d: int) -> str | None:
-    if not (2000 <= y <= 2100 and 1 <= mo <= 12 and 1 <= d <= 31):
+    try:
+        parsed = dt_date(y, mo, d)
+    except ValueError:
         return None
-    return f"{y:04d}-{mo:02d}-{d:02d}"
+    if not (2000 <= parsed.year <= 2100):
+        return None
+    return parsed.isoformat()
 
 
-def _iso_from_roc(y: int, mo: int, d: int) -> str | None:
+def _iso_from_year(y: int, mo: int, d: int) -> str | None:
     if y < 1911:
         y += 1911
     return _valid_iso(y, mo, d)
 
 
-def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
+def _infer_year_for_md(month: int, post_date: str) -> int:
     """
-    回傳 (活動日, 來源)。優先內文活動時間，找不到再用發佈日。
-    注意：不可把「2026年5月13日」誤拆成民國 26 年（→1937）。
+    無年份的月/日（例如 1/15）：以發文日年份為基準；
+    若 10～12 月發文預告 1～3 月活動，自動進位為隔年（解決跨年誤判）。
     """
-    text = content_text or ""
-    post = (post_date or "").strip()
-
-    # 1) 西元完整：2026年5月13日 / 2026-05-13（可選前面有時間／日期標籤）
-    for pat, src in (
-        (
-            r"(?:時間|日期|活動時間|活動日期)[：:\s]*[^\n]{0,40}?"
-            r"(?<!\d)(\d{4})\s*[年/-]\s*(\d{1,2})\s*[月/-]\s*(\d{1,2})",
-            "content_ymd_labeled",
-        ),
-        (
-            r"(?<!\d)(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日",
-            "content_ymd",
-        ),
-    ):
-        m = re.search(pat, text)
-        if m:
-            iso = _valid_iso(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-            if iso:
-                return iso, src
-
-    # 2) 民國年：115 年 9 月 23 日（(?<!\d) 避免吃到 2026 的尾數）
-    m = re.search(
-        r"(?<!\d)(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日",
-        text,
-    )
+    m = re.match(r"^(\d{4})-(\d{1,2})", (post_date or "").strip())
     if m:
-        iso = _iso_from_roc(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        post_year, post_month = int(m.group(1)), int(m.group(2))
+        if post_month >= 10 and month <= 3:
+            return post_year + 1
+        return post_year
+    return dt_date.today().year
+
+
+def _extract_date_from_line(line: str, post_date: str) -> tuple[str | None, str]:
+    """從單行文字擷取西元／民國／月日日期。"""
+    # 1) 西元完整：2026年11月4日 / 2026/11/4 / 2026-11-04 / 2026.11.4
+    m = re.search(r"(?<!\d)(\d{4})\s*[年/.\-]\s*(\d{1,2})\s*[月/.\-]\s*(\d{1,2})\s*日?", line)
+    if m:
+        iso = _valid_iso(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        if iso:
+            return iso, "content_ymd"
+
+    # 2) 民國完整：115年12月2日 / 115/12/2 / 115.12.02
+    m = re.search(r"(?<!\d)(1\d{2})\s*[年/.\-]\s*(\d{1,2})\s*[月/.\-]\s*(\d{1,2})\s*日?", line)
+    if m:
+        iso = _iso_from_year(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         if iso:
             return iso, "content_roc"
 
-    # 3) 多場次取第一場：【第 1 場】9/8
-    m = re.search(r"【第\s*1\s*場】\s*(\d{1,2})\s*/\s*(\d{1,2})", text)
+    # 3) 無年份月日：11月4日 / 12/2
+    m = re.search(r"(?<!\d)(\d{1,2})\s*月\s*(\d{1,2})\s*日", line)
     if m:
-        year_m = re.match(r"^(\d{4})", post)
-        year = int(year_m.group(1)) if year_m else 2026
-        iso = _valid_iso(year, int(m.group(1)), int(m.group(2)))
+        mo, d = int(m.group(1)), int(m.group(2))
+        iso = _valid_iso(_infer_year_for_md(mo, post_date), mo, d)
         if iso:
-            return iso, "content_session1"
+            return iso, "content_md"
+
+    m = re.search(r"(?<!\d)(\d{1,2})\s*/\s*(\d{1,2})(?!\s*/|\d)", line)
+    if m:
+        mo, d = int(m.group(1)), int(m.group(2))
+        iso = _valid_iso(_infer_year_for_md(mo, post_date), mo, d)
+        if iso:
+            return iso, "content_md"
+
+    return None, ""
+
+
+def extract_event_date(content_text: str, post_date: str) -> tuple[str, str]:
+    """
+    優先順序：
+    1. 明確標有「時間：／日期：／活動時間：」且非「報名截止」的行（西元與民國同等優先）
+    2. 一般內文非截止行中的西元或民國完整日期
+    3. 發文日
+    """
+    lines = [ln for ln in (content_text or "").splitlines() if ln.strip()]
+    post = (post_date or "").strip()
+
+    # 1) 具名活動日期／時間行（排除報名截止行）
+    for ln in lines:
+        if DEADLINE_LINE_RE.search(ln):
+            continue
+        if EVENT_DATE_LABEL_RE.search(ln):
+            iso, src = _extract_date_from_line(ln, post)
+            if iso:
+                return iso, f"{src}_labeled"
+
+    # 2) 非截止行中的完整西元／民國日期
+    for ln in lines:
+        if DEADLINE_LINE_RE.search(ln):
+            continue
+        m = re.search(r"(?<!\d)(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", ln)
+        if m:
+            iso = _valid_iso(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            if iso:
+                return iso, "content_ymd"
+        m = re.search(r"(?<!\d)(1\d{2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", ln)
+        if m:
+            iso = _iso_from_year(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            if iso:
+                return iso, "content_roc"
 
     if re.match(r"^\d{4}-\d{2}-\d{2}", post):
         return post[:10], "post_date"
     return post, "post_date"
 
 
-def _session_year(fallback_year: str) -> int:
-    year_m = re.match(r"^(\d{4})", (fallback_year or "").strip())
-    return int(year_m.group(1)) if year_m else 2026
+def _extract_time_from_chunk(chunk: str) -> str:
+    cleaned = clean_time_text(chunk)
+    m = TIME_RANGE_RE.search(cleaned)
+    if m:
+        p1, h1, m1, p2, h2, m2 = m.groups()
+        t1 = _to_24h(p1, h1, m1)
+        # 若前段有「下午」且後段沒寫上下午、數字小於 12（如 下午 1:10 - 3:00），沿用下午
+        eff_p2 = p2 or (p1 if p1 in ("下午", "晚間", "晚上") and int(h2) < 12 else None)
+        t2 = _to_24h(eff_p2, h2, m2)
+        return f"{t1} - {t2}"
+    m = TIME_SINGLE_RE.search(cleaned)
+    if m:
+        p1, h1, m1 = m.groups()
+        return _to_24h(p1, h1, m1)
+    return ""
 
 
-def _session_from_chunk(num: str, chunk: str, year: int) -> dict | None:
-    chunk = clean_time_text(chunk)
-    dm = re.search(
-        r"(?:日期時間|活動時間|時間|日期)\s*[：:]\s*"
-        r"(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*日",
-        chunk,
-    )
-    if dm and dm.group(1):
-        y = int(dm.group(1))
-        if y < 1911:
-            y += 1911
-        iso = _valid_iso(y, int(dm.group(2)), int(dm.group(3)))
-    elif dm:
-        iso = _valid_iso(year, int(dm.group(2)), int(dm.group(3)))
-    else:
-        dm = re.search(r"(\d{1,2})\s*/\s*(\d{1,2})", chunk)
-        iso = _valid_iso(year, int(dm.group(1)), int(dm.group(2))) if dm else None
-    tm = TIME_RANGE_RE.search(chunk)
-    if not iso or not tm:
+def _session_from_chunk(num: int, chunk: str, post_date: str) -> dict | None:
+    if num <= 0:
         return None
+    chunk_lines = [ln for ln in chunk.splitlines() if ln.strip() and not DEADLINE_LINE_RE.search(ln)]
+    if not chunk_lines:
+        return None
+
+    iso = None
+    time_str = ""
+    for ln in chunk_lines:
+        if not iso:
+            found_iso, _ = _extract_date_from_line(ln, post_date)
+            if found_iso:
+                iso = found_iso
+        if not time_str:
+            found_t = _extract_time_from_chunk(ln)
+            if found_t:
+                time_str = found_t
+
+    if not iso:
+        return None
+
     date_display, month_label, day = parse_date_parts(iso)
-    loc_m = re.search(r"(?:講座地點|地點)\s*[：:]\s*([^\n]+)", chunk)
-    location = ""
-    if loc_m:
-        location = re.sub(r"^[：:\s•·]+", "", loc_m.group(1)).strip()
-        location = re.split(
-            r"\s*(?:🔗|※|主辦單位|聯絡人|📌|【)",
-            location,
-            maxsplit=1,
-        )[0].strip()
-        location = re.sub(r"\s+", " ", location)
+    location = extract_location("\n".join(chunk_lines))
     return {
-        "session": int(num),
+        "session": num,
         "date": date_display,
         "month_label": month_label,
         "day": day,
-        "time": f"{tm.group(1)} - {tm.group(2)}",
+        "time": time_str,
         "location": location,
     }
 
 
-def parse_sessions(content_text: str, fallback_year: str) -> list[dict]:
-    """多場次：拆成第1場、第2場…各自日期、時間與地點。"""
+def parse_sessions(content_text: str, post_date: str) -> list[dict]:
+    """多場次拆項：支援區塊格式（第 1 場次：...）與單行格式（【第 1 場】...）。"""
     text = content_text or ""
-    year = _session_year(fallback_year)
-    parsed: list[dict] = []
 
     blocks = SESSION_BLOCK_RE.findall(text)
     if len(blocks) >= 2:
-        for num, body in blocks:
-            item = _session_from_chunk(num, body, year)
+        parsed: list[dict] = []
+        for n1, n2, body in blocks:
+            num = parse_session_num(n1 or n2)
+            item = _session_from_chunk(num, body, post_date)
             if item:
                 parsed.append(item)
         if len(parsed) >= 2:
             return parsed
 
-    raw_sessions = SESSION_RE.findall(text)
-    if len(raw_sessions) < 2:
-        return parsed
-    parsed = []
-    for num, rest in raw_sessions:
-        rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
-        item = _session_from_chunk(num, rest, year)
-        if item:
-            parsed.append(item)
-    return parsed if len(parsed) >= 2 else []
+    inlines = SESSION_INLINE_RE.findall(text)
+    if len(inlines) >= 2:
+        parsed = []
+        for n1, n2, rest in inlines:
+            num = parse_session_num(n1 or n2)
+            rest = re.split(r"[👉📌🔗]", rest, maxsplit=1)[0].strip()
+            item = _session_from_chunk(num, rest, post_date)
+            if item:
+                parsed.append(item)
+        if len(parsed) >= 2:
+            return parsed
+
+    return []
 
 
 def expand_multi_session(event: dict, content_text: str) -> list[dict]:
-    sessions = parse_sessions(
-        content_text,
-        event.get("date") or event.get("post_date") or "",
-    )
+    sessions = parse_sessions(content_text, event.get("post_date") or event.get("date") or "")
     if not sessions:
         return [event]
 
@@ -303,56 +441,47 @@ def expand_multi_session(event: dict, content_text: str) -> list[dict]:
 
 
 def extract_time(content_text: str) -> str:
-    """解析活動時間；單場次活動用。多場次改由 expand_multi_session 拆項。"""
-    text = content_text or ""
+    """擷取單場次活動時間（避開報名截止時間）。"""
+    lines = [ln for ln in (content_text or "").splitlines() if ln.strip()]
 
-    sessions = SESSION_RE.findall(text)
-    if len(sessions) >= 2:
-        lines: list[str] = []
-        for num, rest in sessions:
-            rest = re.split(r"[👉📌]", rest, maxsplit=1)[0].strip()
-            rest = clean_time_text(rest)
-            if CLOCK_RE.search(rest):
-                lines.append(f"第{num}場 {rest}")
-        if lines:
-            return "\n".join(lines)
-
-    labeled = re.search(
-        r"(?:⏰\s*)?(?:時間|活動時間)\s*[：:]\s*([^\n]{0,160})",
-        text,
-    )
-    chunk = labeled.group(1) if labeled else ""
-
-    for source in (chunk, text):
-        if not source:
+    for ln in lines:
+        if DEADLINE_LINE_RE.search(ln):
             continue
-        m = TIME_RANGE_RE.search(source)
-        if m:
-            return f"{m.group(1)} - {m.group(2)}"
+        if EVENT_DATE_LABEL_RE.search(ln):
+            t = _extract_time_from_chunk(ln)
+            if t:
+                return t
 
-    if chunk:
-        m = CLOCK_RE.search(clean_time_text(chunk))
+    for ln in lines:
+        if DEADLINE_LINE_RE.search(ln):
+            continue
+        m = TIME_RANGE_RE.search(clean_time_text(ln))
         if m:
-            return m.group(0)
+            return _extract_time_from_chunk(ln)
 
     return ""
 
 
 def extract_location(content_text: str) -> str:
-    text = content_text or ""
-    # 必須有冒號，避免「時程與地點」誤判
-    m = re.search(r"(?:📍\s*)?(?:講座地點|地點)\s*[：:]\s*\n?\s*([^\n]+)", text)
-    if not m:
-        return ""
-    loc = m.group(1).strip()
-    loc = re.sub(r"^[：:\s•📍]+", "", loc)
-    if CLOCK_RE.match(loc) or loc.startswith("（") or loc.startswith("("):
-        return ""
-    loc = re.split(r"[（(]\s*\d{1,2}:\d{2}", loc, maxsplit=1)[0].strip()
-    loc = re.sub(r"\s+", " ", loc)
-    if len(loc) > 60:
-        loc = loc[:60].rstrip()
-    return loc
+    """擷取活動地點（支援括號線上地點，僅過濾純進場時間備註）。"""
+    for ln in (content_text or "").splitlines():
+        m = re.search(r"(?:講座地點|活動地點|上課地點|演講地點|會議地點|地點)\s*[：:]\s*(.+)", ln)
+        if not m:
+            continue
+        loc = m.group(1).strip()
+        loc = re.sub(r"^[：:\s•·📍◆]+", "", loc)
+        # 切掉同行的其他欄位或符號
+        loc = re.split(r"\s*(?:🔗|※|主辦單位|聯絡人|📌|【|👉)", loc, maxsplit=1)[0].strip()
+        # 移除尾端進場時間括號，如「雲起樓102教室（12:40開放進場）」
+        loc = ADMISSION_NOTE_RE.sub("", loc).strip()
+        loc = re.split(r"[（(]\s*\d{1,2}:\d{2}", loc, maxsplit=1)[0].strip()
+        loc = re.sub(r"\s+", " ", loc)
+        if not loc or TIME_SINGLE_RE.match(loc):
+            continue
+        if len(loc) > 60:
+            loc = loc[:60].rstrip()
+        return loc
+    return ""
 
 
 def discover_max_page(soup: BeautifulSoup) -> int:
@@ -379,16 +508,12 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
 
         title_el = item.select_one(".i-annc__title")
         date_el = item.select_one(".i-annc__postdate")
-        title = (
-            title_el.get_text(strip=True)
-            if title_el
-            else link_el.get_text(strip=True)
-        )
+        title = title_el.get_text(strip=True) if title_el else link_el.get_text(strip=True)
         link = normalize_link(href)
         rows.append(
             {
                 "title": title,
-                "date": date_el.get_text(strip=True) if date_el else "",
+                "post_date": date_el.get_text(strip=True) if date_el else "",
                 "link": link,
                 "key": article_key(link),
             }
@@ -396,77 +521,30 @@ def parse_list_page(soup: BeautifulSoup) -> list[dict]:
     return rows
 
 
-def collect_from_list(list_url: str, label: str) -> dict[str, dict]:
-    print(f"正在抓取{label}：{list_url}")
-    first = get_soup(list_url)
+def collect_from_tag_pages() -> list[dict]:
+    """
+    直接翻完「永續活動」標籤頁的所有分頁（使用 &page_no=N），
+    只抓有正確標籤的文章，速度快且若同事移除標籤會自動同步下架。
+    """
+    print(f"正在抓取「{REQUIRED_TAG}」標籤頁：{TAG_URL}")
+    first = get_soup(TAG_URL)
     max_page = discover_max_page(first)
-    print(f"  分頁：1～{max_page}")
+    print(f"  偵測分頁：1～{max_page}")
+
     by_key: dict[str, dict] = {}
     for page in range(1, max_page + 1):
-        soup = first if page == 1 else get_soup(f"{list_url}?page_no={page}")
+        url = TAG_URL if page == 1 else with_query_param(TAG_URL, "page_no", page)
+        soup = first if page == 1 else get_soup(url)
         rows = parse_list_page(soup)
         print(f"  第 {page} 頁：{len(rows)} 筆")
         for row in rows:
             by_key[row["key"]] = row
+        if not rows:
+            break
         if page < max_page:
             time.sleep(DELAY_SECONDS)
-    return by_key
 
-
-def collect_from_tag_page() -> dict[str, dict]:
-    print(f"正在抓取標籤頁：{TAG_URL}")
-    soup = get_soup(TAG_URL)
-    rows = parse_list_page(soup)
-    print(f"  標籤頁：{len(rows)} 筆")
-    return {row["key"]: row for row in rows}
-
-
-def collect_from_previous() -> dict[str, dict]:
-    if not OUTPUT_PATH.exists():
-        return {}
-    try:
-        data = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    by_key: dict[str, dict] = {}
-    for item in data if isinstance(data, list) else []:
-        link = normalize_link(item.get("link", ""))
-        if not link:
-            continue
-        key = article_key(link)
-        by_key[key] = {
-            "title": item.get("title") or "",
-            "date": item.get("date") or item.get("date_display") or "",
-            "link": link,
-            "key": key,
-        }
-    print(f"合併上次 events.json：{len(by_key)} 筆")
-    return by_key
-
-
-def collect_from_seeds() -> dict[str, dict]:
-    by_key: dict[str, dict] = {}
-    for url in SEED_URLS:
-        link = normalize_link(url)
-        key = article_key(link)
-        by_key[key] = {"title": "", "date": "", "link": link, "key": key}
-    if by_key:
-        print(f"合併種子網址：{len(by_key)} 筆")
-    return by_key
-
-
-def collect_candidates() -> list[dict]:
-    by_key: dict[str, dict] = {}
-    for chunk in (
-        collect_from_list(NEWS_URL, "最新消息"),
-        collect_from_tag_page(),
-        collect_from_previous(),
-        collect_from_seeds(),
-    ):
-        by_key.update(chunk)
-    items = list(by_key.values())
-    print(f"候選去重後共 {len(items)} 筆，開始檢查「{REQUIRED_TAG}」標籤…")
-    return items
+    return list(by_key.values())
 
 
 def page_has_sustainability_tag(soup: BeautifulSoup) -> bool:
@@ -480,26 +558,31 @@ def page_has_sustainability_tag(soup: BeautifulSoup) -> bool:
 
 
 def extract_detail_meta(soup: BeautifulSoup) -> tuple[str, str, str]:
-    """title, post_date, content_text"""
-    title_el = soup.select_one("h3")
+    """精準擷取文章標題、發文日期與不切斷行內標籤的純文字內文。"""
+    title_el = (
+        soup.select_one("h3.s-annc__show-title")
+        or soup.select_one("h3.annc-title")
+        or soup.select_one("#main-content h3")
+    )
     title = title_el.get_text(strip=True) if title_el else ""
 
     date_el = soup.select_one(".s-annc__date")
-    date = date_el.get_text(strip=True) if date_el else ""
+    post_date = date_el.get_text(strip=True) if date_el else ""
 
     body = soup.select_one("div.s-annc__post-body")
-    content_text = body.get_text("\n", strip=True) if body else ""
-    return title, date, content_text
+    content_text = extract_clean_text(body)
+    return title, post_date, content_text
 
 
 def fetch_sustainability_events() -> list[dict]:
-    candidates = collect_candidates()
+    candidates = collect_from_tag_pages()
+    print(f"共 {len(candidates)} 篇「{REQUIRED_TAG}」文章，開始解析內文…")
     events: list[dict] = []
 
     for index, row in enumerate(candidates, start=1):
         link = row["link"]
         hint_title = row.get("title") or link
-        print(f"  [{index}/{len(candidates)}] 檢查：{hint_title[:36]}…")
+        print(f"  [{index}/{len(candidates)}] 解析：{hint_title[:40]}")
         time.sleep(DELAY_SECONDS)
         try:
             soup = get_soup(link)
@@ -508,19 +591,20 @@ def fetch_sustainability_events() -> list[dict]:
             continue
 
         if not page_has_sustainability_tag(soup):
-            print("      → 無「永續活動」標籤")
+            print("      → 內頁已無「永續活動」標籤，略過")
             continue
 
         title, post_date, content_text = extract_detail_meta(soup)
-        post_date = post_date or row.get("date") or ""
+        post_date = post_date or row.get("post_date") or ""
         event_date, date_source = extract_event_date(content_text, post_date)
         date_display, month_label, day = parse_date_parts(event_date)
         event_time = extract_time(content_text)
         location = extract_location(content_text)
         final_title = title or row.get("title") or "（無標題）"
+
         print(
-            f"      → 符合，日={date_display}（{date_source}），"
-            f"時={event_time[:40] or '—'}，地={location or '—'}"
+            f"      → 日={date_display}（{date_source}），"
+            f"時={event_time or '—'}，地={location or '—'}"
         )
 
         base_event = {
@@ -539,17 +623,29 @@ def fetch_sustainability_events() -> list[dict]:
             print(f"      → 拆成 {len(expanded)} 場次")
         events.extend(expanded)
 
-    events.sort(key=lambda e: e.get("date") or "", reverse=True)
+    events.sort(
+        key=lambda e: (e.get("date") or "", e.get("post_date") or "", e.get("session") or 0),
+        reverse=True,
+    )
     return events
 
 
 def main() -> None:
+    t0 = time.monotonic()
     events = fetch_sustainability_events()
+    if not events and OUTPUT_PATH.exists():
+        try:
+            prev = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            prev = []
+        if prev:
+            raise RuntimeError("本次抓取結果為 0 筆，為避免官網暫時異常清空資料，已中止寫入。")
     OUTPUT_PATH.write_text(
         json.dumps(events, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"成功擷取 {len(events)} 筆「{REQUIRED_TAG}」，已存入 {OUTPUT_PATH.name}")
+    elapsed = time.monotonic() - t0
+    print(f"完成！共擷取 {len(events)} 筆「{REQUIRED_TAG}」（耗時 {elapsed:.1f}s），已存入 {OUTPUT_PATH.name}")
 
 
 if __name__ == "__main__":
