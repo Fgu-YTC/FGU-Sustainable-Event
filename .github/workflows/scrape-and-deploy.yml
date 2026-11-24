@@ -2,8 +2,10 @@ name: Scrape and Deploy Pages
 
 on:
   schedule:
-    # 每小時（UTC）；GitHub 排程可能略延遲，約可在發文後 1 小時內跟上
-    - cron: "0 * * * *"
+    # 台灣上班時段 08:00–20:45（UTC 00:00–12:45）每 15 分鐘同步一次
+    - cron: "*/15 0-12 * * *"
+    # 夜間每小時同步一次
+    - cron: "0 13-23 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -26,6 +28,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +49,7 @@ jobs:
         run: python scraper.py
 
       - name: Commit updated events.json
+        id: check
         env:
           LANG: C.UTF-8
           LC_ALL: C.UTF-8
@@ -54,22 +59,31 @@ jobs:
           git add events.json
           if git diff --cached --quiet; then
             echo "events.json unchanged"
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            fi
           else
             git commit -m "chore: update events.json from scraper"
             git push
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare site
+        if: steps.check.outputs.should_deploy == 'true'
         run: |
           mkdir -p _site
           cp index.html events.json _site/
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.should_deploy == 'true'
         with:
           path: _site
 
   deploy:
     needs: build
+    if: needs.build.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
