@@ -1,25 +1,27 @@
-<!--
-貼到佛光官網內容區即可（頁面標題請改「研討會與活動」）
--->
+<!-- 佛光大學永續發展辦公室 — 「研討會與活動」官網內嵌程式碼（優化版） -->
+<!-- 使用方式：推上新版 FGU-Sustainable-Event/index.html 後，貼回 /zh_tw/announcement/event 原始碼區（並可隨版本調整 v= 參數清快取） -->
 <div class="sdgs-activity-embed" style="width:100%;margin:8px 0 16px;">
   <iframe
+    frameborder="0"
     id="sdgs-activity-frame"
-    src="https://fgu-ytc.github.io/FGU-Sustainable-Event/?embed=1&v=20261013a"
-    title="研討會與活動"
     loading="lazy"
-    style="width:100%;height:420px;border:0;display:block;background:transparent;overflow:hidden;"
-  ></iframe>
+    sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
+    scrolling="no"
+    src="https://fgu-ytc.github.io/FGU-Sustainable-Event/?embed=1&amp;v=20261124a"
+    style="width:100%;height:360px;border:0;display:block;background:transparent;overflow:hidden;transition:height 0.25s ease;"
+    title="研討會與活動"></iframe>
 </div>
 <script>
 (function () {
   function onMessage(event) {
+    if (event.origin !== "https://fgu-ytc.github.io") return;
     var data = event.data;
     if (!data || data.source !== "sdgs-activity" || data.type !== "resize") return;
     var frame = document.getElementById("sdgs-activity-frame");
     if (!frame) return;
-    var h = Number(data.height) || 0;
-    if (h < 280) h = 280;
-    if (h > 4000) h = 4000;
+    var h = Math.ceil(Number(data.height) || 0);
+    if (h < 240) h = 240;
+    if (h > 4500) h = 4500;
     frame.style.height = h + "px";
   }
   window.addEventListener("message", onMessage);
