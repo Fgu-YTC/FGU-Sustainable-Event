@@ -20,7 +20,7 @@
     "location": "德香樓 B104 演講廳",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%E2%9A%A1%EF%B8%8F-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E5%A4%A7%E5%B8%AB%E8%AC%9B%E5%BA%A7-II-%E7%B5%A6%E8%87%BA%E7%81%A32030%E7%9A%84%E5%82%99%E5%BF%98%E9%8C%84%F0%9F%8C%B1-75250623",
     "post_date": "2026-11-05",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "🌱 【引領未來 · 永續標竿】永續發展大師講座 🌿（第2場）",
@@ -35,6 +35,17 @@
     "session": 2
   },
   {
+    "title": "🌲【永續發展大師講座】森林療癒力 🍃",
+    "date": "2026-11-04",
+    "month_label": "十一月",
+    "day": "04",
+    "time": "15:10 - 17:00",
+    "location": "雲起樓102教室",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%8C%B2-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E5%A4%A7%E5%B8%AB%E8%AC%9B%E5%BA%A7-%E6%A3%AE%E6%9E%97%E7%99%82%E7%99%92%E5%8A%9B-%F0%9F%8D%83-27035763",
+    "post_date": "2026-10-21",
+    "date_source": "content_ymd_labeled"
+  },
+  {
     "title": "🌱 【引領未來 · 永續標竿】永續發展大師講座 🌿（第1場）",
     "date": "2026-11-04",
     "month_label": "十一月",
@@ -45,17 +56,6 @@
     "post_date": "2026-10-05",
     "date_source": "content_session",
     "session": 1
-  },
-  {
-    "title": "🌲【永續發展大師講座】森林療癒力 🍃",
-    "date": "2026-11-04",
-    "month_label": "十一月",
-    "day": "04",
-    "time": "15:10 - 17:00",
-    "location": "雲起樓102教室",
-    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%8C%B2-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E5%A4%A7%E5%B8%AB%E8%AC%9B%E5%BA%A7-%E6%A3%AE%E6%9E%97%E7%99%82%E7%99%92%E5%8A%9B-%F0%9F%8D%83-27035763",
-    "post_date": "2026-10-21",
-    "date_source": "content_ymd_labeled"
   },
   {
     "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！（第3場）",
@@ -90,7 +90,7 @@
     "location": "雲起樓 507 教室",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%8C%B1-ESG%E5%9F%B9%E5%8A%9B%E8%AA%B2%E7%A8%8B-%E6%B0%B8%E7%BA%8C%E5%A0%B1%E5%91%8A%E6%9B%B8%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-%E5%BE%9E%E5%90%88%E8%A6%8F%E5%88%B0%E7%89%B9%E8%89%B2%E5%B1%95%E7%8F%BE-72919609",
     "post_date": "2026-09-08",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "🔥 【USR 計畫影響力大升級】SROI 實體工作坊重磅登場！（第1場）",
@@ -113,7 +113,7 @@
     "location": "雲起摟301會議廳",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/%F0%9F%93%A2-%E9%AB%98CP%E5%80%BC%E5%9F%B9%E5%8A%9B-%E8%90%AC%E5%85%83%E7%B4%9A%E5%9C%8B%E9%9A%9B%E8%AA%8D%E8%AD%89%E8%AA%B2%E5%85%8D%E8%B2%BB%E8%81%BD-SROI-%E7%A4%BE%E6%9C%83%E5%BD%B1%E9%9F%BF%E5%8A%9B%E5%AF%A6%E5%8B%99%E8%AC%9B%E5%BA%A7-81418919",
     "post_date": "2026-06-08",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "【永續發展系列演講】氣候變遷的因應與調適—大學的社會責任（李鴻源教授主講）",
@@ -124,7 +124,7 @@
     "location": "德香樓B104演講廳",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%E6%B0%A3%E5%80%99%E8%AE%8A%E9%81%B7%E7%9A%84%E5%9B%A0%E6%87%89%E8%88%87%E8%AA%BF%E9%81%A9%E2%80%94%E5%A4%A7%E5%AD%B8%E7%9A%84%E7%A4%BE%E6%9C%83%E8%B2%AC%E4%BB%BB%EF%BC%88%E6%9D%8E%E9%B4%BB%E6%BA%90%E6%95%99%E6%8E%88%E4%B8%BB%E8%AC%9B%EF%BC%89-75369999",
     "post_date": "2026-04-16",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "【永續發展系列演講】🌍全球警告：氣候變遷，不只是天氣問題，而是文明存續的終極考驗！💥",
@@ -133,7 +133,7 @@
     "day": "13",
     "time": "13:10",
     "location": "雲起樓102教室",
-    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E5%9C%B0%E9%BB%9E%E6%94%B9%E8%87%B3%E9%9B%B2%E8%B5%B7%E6%A8%93102%E6%95%99%E5%AE%A4-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%F0%9F%8C%8D%E5%85%A8%E7%90%83%E8%AD%A6%E5%91%8A-%E6%B0%A3%E5%80%99%E8%AE%8A%E9%81%B7-%E4%B8%8D%E5%8F%AA%E6%98%AF%E5%A4%A9%E6%B0%A3%E5%95%8F%E9%A1%8C-%E8%80%8C%E6%98%AF%E6%96%87%E6%98%8E%E5%AD%98%E7%BA%8C%E7%9A%84%E7%B5%82%E6%A5%B5%E8%80%83%E9%A9%97-%F0%9F%92%A5-41371253",
+    "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%F0%9F%8C%8D%E5%85%A8%E7%90%83%E8%AD%A6%E5%91%8A-%E6%B0%A3%E5%80%99%E8%AE%8A%E9%81%B7-%E4%B8%8D%E5%8F%AA%E6%98%AF%E5%A4%A9%E6%B0%A3%E5%95%8F%E9%A1%8C-%E8%80%8C%E6%98%AF%E6%96%87%E6%98%8E%E5%AD%98%E7%BA%8C%E7%9A%84%E7%B5%82%E6%A5%B5%E8%80%83%E9%A9%97-%F0%9F%92%A5-41371253",
     "post_date": "2026-04-20",
     "date_source": "content_ymd_labeled"
   },
@@ -146,7 +146,7 @@
     "location": "雲起樓 309-1 教室",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E5%9F%B9%E5%8A%9B%E8%AC%9B%E5%BA%A7-%E8%A8%88%E7%95%AB%E7%B8%BE%E6%95%88%E7%BF%BB%E8%BD%89-%E5%BE%9E-KPI-%E9%82%81%E5%90%91-SROI-%E5%AF%A6%E6%88%B0%E8%A7%A3%E6%9E%90-12168613",
     "post_date": "2026-04-24",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "【永續發展系列演講】大學永續之路：國家永續發展獎",
@@ -157,7 +157,7 @@
     "location": "雲起樓406會議室",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%E5%A4%A7%E5%AD%B8%E6%B0%B8%E7%BA%8C%E4%B9%8B%E8%B7%AF-%E5%9C%8B%E5%AE%B6%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%8D%8E-2820265",
     "post_date": "2026-04-08",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   },
   {
     "title": "【永續發展系列演講】永續共好，攜手前行 (SDGs x 大學使命)",
@@ -168,6 +168,6 @@
     "location": "雲起樓301會議室",
     "link": "https://sdgs.fgu.edu.tw/zh_tw/announcement/News/-%E6%B0%B8%E7%BA%8C%E7%99%BC%E5%B1%95%E7%B3%BB%E5%88%97%E6%BC%94%E8%AC%9B-%E6%B0%B8%E7%BA%8C%E5%85%B1%E5%A5%BD-%E6%94%9C%E6%89%8B%E5%89%8D%E8%A1%8C-SDGs-x-%E5%A4%A7%E5%AD%B8%E4%BD%BF%E5%91%BD-61109573",
     "post_date": "2025-10-14",
-    "date_source": "content_roc"
+    "date_source": "content_roc_labeled"
   }
 ]
