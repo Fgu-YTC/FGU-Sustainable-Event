@@ -15,10 +15,14 @@
   <style>
     :root {
       --indigo: #313A9B;
+      --indigo-hover: #262e80;
       --blue: #10BEF6;
+      --blue-deep: #09a9df;
       --sky: #2D7CC5;
       --babyblue: #DBF5FE;
+      --babyblue-soft: #eaf9ff;
       --dark: #403a39;
+      --muted: #556470;
     }
     * { box-sizing: border-box; }
     body {
@@ -28,13 +32,26 @@
       background: #fff;
       min-height: 100vh;
     }
-    html.is-embed body { min-height: 0; background: transparent; }
+    html.is-embed body {
+      min-height: 0;
+      background: transparent;
+      overflow-x: hidden;
+    }
     .container {
       width: min(1140px, calc(100% - 2rem));
       margin: 0 auto;
       padding: 1.5rem 0 3rem;
     }
-    html.is-embed .container { width: 100%; padding: 0.25rem 0 1rem; }
+    html.is-embed .container {
+      width: 100%;
+      padding: 0.25rem 0 1rem;
+    }
+
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid var(--indigo);
+      outline-offset: 2px;
+    }
 
     .page-title {
       color: #fff;
@@ -43,7 +60,8 @@
       font-family: "Noto Serif TC", serif;
       padding: 30px 0;
       position: relative;
-      margin: 30px 0 50px;
+      z-index: 20;
+      margin: 30px 0 44px;
     }
     .page-title .row {
       display: flex;
@@ -63,7 +81,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
       padding-right: 24px;
     }
@@ -103,8 +121,8 @@
       border-radius: 50em;
       background: #fff;
       box-shadow: 0 2px 8px rgba(49, 58, 155, 0.18);
-      transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-                  width 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+                  width 0.34s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 0;
       pointer-events: none;
       will-change: transform, width;
@@ -113,7 +131,7 @@
       font-family: inherit;
       border: 0;
       background: transparent;
-      color: rgba(255, 255, 255, 0.88);
+      color: rgba(255, 255, 255, 0.9);
       cursor: pointer;
       padding: 8px 18px;
       border-radius: 50em;
@@ -122,12 +140,18 @@
       white-space: nowrap;
       position: relative;
       z-index: 1;
-      transition: color 0.28s ease;
+      transition: color 0.24s ease;
     }
     .seg-tabs button.active {
       background: transparent;
       color: var(--indigo);
       font-weight: 700;
+    }
+    .seg-tab-cnt {
+      margin-left: 4px;
+      font-size: 0.82em;
+      opacity: 0.78;
+      font-variant-numeric: tabular-nums;
     }
 
     html.is-embed .page-title {
@@ -135,7 +159,7 @@
       color: var(--dark);
       border-radius: 0;
       padding: 0;
-      margin: 0 0 1rem;
+      margin: 0 0 1.15rem;
       font-family: inherit;
     }
     html.is-embed .page-title .row {
@@ -170,61 +194,60 @@
     .act-stage {
       overflow: hidden;
       position: relative;
+      z-index: 1;
       width: 100%;
+      padding: 4px 2px;
     }
     .act-list {
       will-change: transform, opacity;
     }
     .act-list.flow-out-left {
-      animation: flowOutLeft 0.34s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: flowOutLeft 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
     .act-list.flow-out-right {
-      animation: flowOutRight 0.34s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      animation: flowOutRight 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
     .act-list.flow-in-from-right {
-      animation: flowInFromRight 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: flowInFromRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .act-list.flow-in-from-left {
-      animation: flowInFromLeft 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: flowInFromLeft 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     .act-list ul li {
-      animation: cardFlowIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: cardFlowIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-    .act-list.flow-in-from-right ul li { --card-x: 28px; }
-    .act-list.flow-in-from-left ul li { --card-x: -28px; }
-    .act-list ul li:nth-child(1) { animation-delay: 0.04s; }
-    .act-list ul li:nth-child(2) { animation-delay: 0.09s; }
-    .act-list ul li:nth-child(3) { animation-delay: 0.14s; }
-    .act-list ul li:nth-child(4) { animation-delay: 0.19s; }
-    .act-list ul li:nth-child(5) { animation-delay: 0.24s; }
-    .act-list ul li:nth-child(6) { animation-delay: 0.29s; }
-    .act-list ul li:nth-child(n+7) { animation-delay: 0.34s; }
+    .act-list.flow-in-from-right ul li { --card-x: 20px; }
+    .act-list.flow-in-from-left ul li { --card-x: -20px; }
+    .act-list ul li:nth-child(1) { animation-delay: 0.02s; }
+    .act-list ul li:nth-child(2) { animation-delay: 0.05s; }
+    .act-list ul li:nth-child(3) { animation-delay: 0.08s; }
+    .act-list ul li:nth-child(4) { animation-delay: 0.11s; }
+    .act-list ul li:nth-child(5) { animation-delay: 0.14s; }
+    .act-list ul li:nth-child(n+6) { animation-delay: 0.17s; }
     @keyframes flowOutLeft {
       from { opacity: 1; transform: translateX(0); }
-      to { opacity: 0; transform: translateX(-42%); }
+      to { opacity: 0; transform: translateX(-24%); }
     }
     @keyframes flowOutRight {
       from { opacity: 1; transform: translateX(0); }
-      to { opacity: 0; transform: translateX(42%); }
+      to { opacity: 0; transform: translateX(24%); }
     }
     @keyframes flowInFromRight {
-      from { opacity: 0; transform: translateX(42%); }
+      from { opacity: 0; transform: translateX(24%); }
       to { opacity: 1; transform: translateX(0); }
     }
     @keyframes flowInFromLeft {
-      from { opacity: 0; transform: translateX(-42%); }
+      from { opacity: 0; transform: translateX(-24%); }
       to { opacity: 1; transform: translateX(0); }
     }
     @keyframes cardFlowIn {
-      from { opacity: 0; transform: translateX(var(--card-x, 20px)); }
+      from { opacity: 0; transform: translateX(var(--card-x, 14px)); }
       to { opacity: 1; transform: translateX(0); }
-    }
-    .seg-tabs.is-flowing .seg-tabs-pill {
-      transition-duration: 0.45s;
     }
     @media (prefers-reduced-motion: reduce) {
       .seg-tabs-pill,
-      .seg-tabs button { transition: none; }
+      .seg-tabs button,
+      .act-list li { transition: none; }
       .act-list.flow-out-left,
       .act-list.flow-out-right,
       .act-list.flow-in-from-right,
@@ -232,113 +255,185 @@
       .act-list ul li { animation: none; }
     }
 
+    /* 下拉選單：改為點擊切換避免滑鼠停留卡住，並修正鍵盤與邊界截斷 */
     .dropdown {
       position: relative;
-      z-index: 3;
-      min-width: 140px;
+      z-index: 30;
+      min-width: 146px;
       text-align: center;
       display: inline-block;
     }
     .dropbtn {
       font-family: inherit;
-      border: 1px solid var(--dark);
-      padding: 10px 48px 10px 24px;
-      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403a39' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") 92% center no-repeat;
+      border: 1px solid rgba(64, 58, 57, 0.55);
+      padding: 9px 42px 9px 20px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23403a39' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") calc(100% - 12px) center no-repeat;
       border-radius: 50em;
       width: 100%;
       display: block;
       cursor: pointer;
       color: var(--dark);
-      font-size: 0.95rem;
+      font-size: 0.94rem;
+      font-weight: 500;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dropbtn:hover,
+    .dropdown.open .dropbtn {
+      border-color: var(--indigo);
+      box-shadow: 0 2px 10px rgba(49, 58, 155, 0.14);
     }
     .dropdown-content {
       display: none;
       position: absolute;
+      left: 0;
+      top: calc(100% + 6px);
       width: 100%;
-      border-radius: 20px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-      z-index: 5;
-      max-height: 280px;
+      min-width: 148px;
+      background: #fff;
+      border: 1px solid rgba(49, 58, 155, 0.12);
+      border-radius: 16px;
+      box-shadow: 0 10px 24px rgba(24, 34, 72, 0.16);
+      z-index: 40;
+      max-height: 260px;
       overflow: auto;
-      margin-top: 4px;
       text-align: left;
+      padding: 4px 0;
     }
-    .dropdown:hover .dropdown-content,
     .dropdown.open .dropdown-content { display: block; }
+    .dropdown.drop-up .dropdown-content {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
     .dropdown-content a {
-      color: #000;
+      color: var(--dark);
       padding: 8px 16px;
       background: #fff;
       display: block;
       text-decoration: none;
-      font-size: 0.92rem;
+      font-size: 0.91rem;
+      transition: background 0.15s ease, color 0.15s ease;
     }
-    .dropdown-content a:first-child { border-radius: 20px 20px 0 0; }
-    .dropdown-content a:last-child { border-radius: 0 0 20px 20px; }
-    .dropdown-content a:hover,
-    .dropdown-content a.active { background: var(--indigo); color: #fff; }
+    .dropdown-content a:hover {
+      background: var(--babyblue-soft);
+      color: var(--indigo);
+    }
+    .dropdown-content a.active {
+      background: var(--indigo);
+      color: #fff;
+      font-weight: 700;
+    }
 
+    /* 活動卡片清單：保留原本「左藍圓角日期塊 + 淺藍內容塊」外觀，改用 Grid 根治雙欄塌陷 */
     .act-list ul {
-      margin: 0 8%;
+      margin: 0 4%;
       padding: 0;
       list-style: none;
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
     }
     html.is-embed .act-list ul { margin: 0; }
     .act-list li {
       background: var(--babyblue);
-      padding: 20px;
+      border: 1px solid rgba(45, 124, 197, 0.16);
+      border-radius: 0 12px 12px 30px;
       position: relative;
-      flex: 0 0 38%;
-      margin: 0 20px 20px 100px;
+      display: flex;
+      align-items: stretch;
       color: var(--dark);
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
-    .act-list li:nth-child(2n) { margin-right: 0; }
+    .act-list li:hover {
+      transform: translateY(-2px);
+      border-color: rgba(45, 124, 197, 0.38);
+      box-shadow: 0 8px 20px rgba(49, 58, 155, 0.10);
+    }
     .act-list li .date {
-      background: var(--blue);
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blue-deep) 100%);
       color: #fff;
-      position: absolute;
-      width: 100px;
-      height: 100%;
-      left: -100px;
-      top: 0;
+      flex: 0 0 96px;
+      width: 96px;
+      min-height: 112px;
       text-align: center;
-      font-size: 1.05em;
+      font-size: 1.02em;
       line-height: 1.35em;
-      border-radius: 0 0 0 30px;
+      border-radius: 0 0 0 29px;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-shadow: 0 1px 2px rgba(0, 58, 92, 0.18);
     }
-    .act-list li .date .text { display: block; width: 100%; padding: 0 6px; }
+    .act-list li .date .text { display: block; width: 100%; padding: 12px 6px; }
     .act-list li .date .year {
       display: block;
-      font-size: 0.82em;
+      font-size: 0.8em;
       font-weight: 500;
-      opacity: 0.95;
-      letter-spacing: 0.02em;
+      opacity: 0.94;
+      letter-spacing: 0.03em;
+      font-variant-numeric: tabular-nums;
     }
-    .act-list li .date .month { display: block; }
+    .act-list li .date .month {
+      display: block;
+      font-size: 0.96em;
+      margin: 1px 0;
+    }
     .act-list li .date .day {
       display: block;
-      font-size: 1.25em;
+      font-size: 1.38em;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+    .act-list li .act-body {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .act-list h4 {
-      margin: 0 0 12px;
-      font-size: 1.05rem;
+      margin: 0 0 10px;
+      font-size: 1.03rem;
       font-weight: 700;
-      line-height: 1.45;
+      line-height: 1.48;
     }
-    .act-list h4 a { color: var(--dark); text-decoration: none; }
-    .act-list h4 a:hover { color: var(--indigo); text-decoration: underline; }
-    .act-list p {
+    .act-list h4 a {
+      color: var(--dark);
+      text-decoration: none;
+      transition: color 0.18s ease;
+    }
+    .act-list h4 a::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+    .act-list li:hover h4 a {
+      color: var(--indigo);
+    }
+    .act-list h4 a:hover {
+      text-decoration: underline;
+    }
+    .act-meta {
       margin: 0;
-      line-height: 1.6em;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: var(--dark);
+    }
+    .act-meta-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
       white-space: pre-line;
-      font-size: 0.95rem;
+    }
+    .act-meta-label {
+      color: var(--muted);
+      font-weight: 500;
+      flex-shrink: 0;
     }
 
     .pagenation {
@@ -347,9 +442,11 @@
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
-      margin: 50px calc(8% + 20px) 40px 8%;
+      margin: 40px 4% 28px;
+      position: relative;
+      z-index: 15;
     }
-    html.is-embed .pagenation { margin: 24px 0 8px; }
+    html.is-embed .pagenation { margin: 22px 0 6px; }
     .pagenation .dropdown { position: relative; right: auto; top: auto; }
     .pagination {
       margin: 0;
@@ -357,28 +454,49 @@
       list-style: none;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+    }
+    .pagination li#pageInfo {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-right: 4px;
+      font-variant-numeric: tabular-nums;
     }
     .pagination button {
-      border: none;
-      background: transparent;
+      border: 1px solid rgba(49, 58, 155, 0.22);
+      background: #fff;
       cursor: pointer;
       color: var(--indigo);
-      font-size: 0.95rem;
-      padding: 6px 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 6px 14px;
       border-radius: 50em;
       font-family: inherit;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
     }
-    .pagination button:disabled { opacity: 0.35; cursor: default; }
+    .pagination button:hover:not(:disabled) {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+    }
+    .pagination button:disabled {
+      opacity: 0.38;
+      cursor: default;
+      border-color: rgba(64, 58, 57, 0.18);
+      color: var(--muted);
+    }
+
     .status {
-      margin: 0 8% 0 calc(8% + 100px);
-      padding: 2.5rem 1rem;
+      margin: 0 4%;
+      padding: 2.5rem 1.25rem;
       text-align: center;
-      color: #5a6b78;
+      color: var(--muted);
       background: var(--babyblue);
-      border-radius: 0 0 0 30px;
+      border: 1px solid rgba(45, 124, 197, 0.15);
+      border-radius: 0 12px 12px 30px;
+      font-size: 0.96rem;
     }
-    html.is-embed .status { margin-left: 100px; margin-right: 0; }
+    html.is-embed .status { margin: 0; }
 
     @media (max-width: 900px) {
       .page-title .col-title,
@@ -392,40 +510,47 @@
         padding: 15px 20px;
         border-radius: 0 0 0 30px;
         margin-top: 0;
+        margin-bottom: 24px;
       }
       .page-title .row { flex-direction: column; align-items: flex-start; gap: 0.75rem; min-height: auto; }
       .page-title h4 { font-size: 1.3em; }
-      .act-list ul { display: block; margin: 0; }
-      .act-list li {
-        width: calc(100% - 100px);
-        flex: none;
-        margin: 0 0 20px 100px;
+      .act-list ul {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin: 0;
       }
-      .pagenation { margin: 30px 0 40px; }
+      .pagenation { margin: 26px 0 24px; }
+      .status { margin: 0; }
     }
     @media (max-width: 520px) {
       .seg-tabs { width: 100%; }
       .seg-tabs button { flex: 1; padding: 8px 10px; font-size: 0.88rem; }
-      .act-list li { margin-left: 72px; width: calc(100% - 72px); padding: 16px; }
-      .act-list li .date { width: 72px; left: -72px; font-size: 1em; }
-      .status { margin-left: 72px; }
+      html.is-embed .page-title .col-filter { gap: 10px; }
+      html.is-embed #monthDropdown { width: 100%; }
+      .act-list li .date { flex: 0 0 76px; width: 76px; font-size: 0.95em; }
+      .act-list li .act-body { padding: 14px 16px; }
+      .act-list h4 { font-size: 0.98rem; }
     }
   </style>
 </head>
 <body>
-  <main class="container">
+  <main class="container" id="mainContainer">
     <section class="page-title indigo xdot">
       <div class="row">
         <div class="col-title"><h4>研討會與活動</h4></div>
         <div class="col-filter">
           <div class="seg-tabs" role="tablist" aria-label="活動分類">
             <span class="seg-tabs-pill" id="tabPill" aria-hidden="true"></span>
-            <button type="button" role="tab" id="tabComing" class="active" aria-selected="true" data-tab="coming">Coming Soon</button>
-            <button type="button" role="tab" id="tabPast" aria-selected="false" data-tab="past">歷年活動</button>
+            <button type="button" role="tab" id="tabComing" class="active" aria-selected="true" data-tab="coming">
+              Coming Soon<span class="seg-tab-cnt" id="cntComing"></span>
+            </button>
+            <button type="button" role="tab" id="tabPast" aria-selected="false" data-tab="past">
+              歷年活動<span class="seg-tab-cnt" id="cntPast"></span>
+            </button>
           </div>
           <div class="dropdown" id="monthDropdown">
-            <button type="button" class="dropbtn" id="monthBtn">全部月份</button>
-            <div class="dropdown-content" id="monthMenu"></div>
+            <button type="button" class="dropbtn" id="monthBtn" aria-haspopup="listbox" aria-expanded="false">全部月份</button>
+            <div class="dropdown-content" id="monthMenu" role="listbox" aria-label="依月份篩選"></div>
           </div>
         </div>
       </div>
@@ -439,10 +564,10 @@
     </div>
 
     <div class="pagenation inside" id="pager" hidden>
-      <div class="dropdown" id="rowsDropdown">
-        <button type="button" class="dropbtn" id="rowsBtn">一頁10筆</button>
-        <div class="dropdown-content" id="rowsMenu">
-          <a href="#" data-rows="10">一頁10筆</a>
+      <div class="dropdown drop-up" id="rowsDropdown">
+        <button type="button" class="dropbtn" id="rowsBtn" aria-haspopup="listbox" aria-expanded="false">一頁10筆</button>
+        <div class="dropdown-content" id="rowsMenu" role="listbox" aria-label="每頁顯示筆數">
+          <a href="#" data-rows="10" class="active">一頁10筆</a>
           <a href="#" data-rows="15">一頁15筆</a>
           <a href="#" data-rows="20">一頁20筆</a>
           <a href="#" data-rows="30">一頁30筆</a>
@@ -459,6 +584,8 @@
   <script>
     const state = {
       all: [],
+      comingPool: [],
+      pastPool: [],
       tabPool: [],
       filtered: [],
       tab: "coming",
@@ -466,7 +593,8 @@
       rows: 10,
       page: 1,
       flowDir: "left",
-      animating: false,
+      swapTimer: null,
+      clearTimer: null,
     };
     const IS_EMBED = document.documentElement.classList.contains("is-embed");
 
@@ -534,24 +662,42 @@
       );
     }
 
-    function detailText(ev) {
-      const lines = [];
-      // 日期已在左側色塊顯示，內文不再重複
+    function detailHtml(ev) {
+      const rows = [];
       if (ev.time) {
-        // 去掉「開放進場」括號說明，只留幾點到幾點
         const t = String(ev.time).replace(/\s*[（(][^）)]*開放進場[^）)]*[）)]/g, "").trim();
-        if (t) lines.push(t.indexOf("\n") >= 0 ? "時間：\n" + t : "時間：" + t);
+        if (t) {
+          rows.push(
+            '<div class="act-meta-row"><span class="act-meta-label">時間：</span><span>' +
+            escapeHtml(t) + "</span></div>"
+          );
+        }
       }
-      if (ev.location) lines.push("地點：" + ev.location);
-      return lines.join("\n");
+      if (ev.location) {
+        rows.push(
+          '<div class="act-meta-row"><span class="act-meta-label">地點：</span><span>' +
+          escapeHtml(ev.location) + "</span></div>"
+        );
+      }
+      return rows.length ? '<div class="act-meta">' + rows.join("") + "</div>" : "";
     }
 
+    /** 量測容器實際高度，避免切換回筆數較少的分頁時 iframe 高度卡在舊值無法縮回 */
     function notifyParentHeight() {
       if (!IS_EMBED || window.parent === window) return;
-      const h = Math.ceil(Math.max(
-        document.documentElement.scrollHeight,
-        document.body.scrollHeight
-      ));
+      const container = document.getElementById("mainContainer");
+      const contentH = container
+        ? Math.ceil(container.getBoundingClientRect().height)
+        : Math.ceil(document.body.scrollHeight);
+
+      // 若月份下拉選單展開，保留底部空間避免被 iframe 截斷
+      let dropdownBottom = 0;
+      document.querySelectorAll(".dropdown.open .dropdown-content").forEach(function (menu) {
+        const r = menu.getBoundingClientRect();
+        if (r.bottom > dropdownBottom) dropdownBottom = Math.ceil(r.bottom) + 12;
+      });
+
+      const h = Math.max(contentH + 8, dropdownBottom);
       window.parent.postMessage({ source: "sdgs-activity", type: "resize", height: h }, "*");
     }
 
@@ -601,9 +747,14 @@
     }
 
     function buildTabPool() {
-      const coming = nextUpcoming(state.all).sort(byNewest);
-      const past = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(byNewest);
-      state.tabPool = state.tab === "coming" ? coming : past;
+      state.comingPool = nextUpcoming(state.all).sort(byNewest);
+      state.pastPool = state.all.filter(function (ev) { return !isComing(ev); }).slice().sort(byNewest);
+      state.tabPool = state.tab === "coming" ? state.comingPool : state.pastPool;
+
+      const cEl = document.getElementById("cntComing");
+      const pEl = document.getElementById("cntPast");
+      if (cEl) cEl.textContent = " (" + state.comingPool.length + ")";
+      if (pEl) pEl.textContent = " (" + state.pastPool.length + ")";
     }
 
     function buildMonthMenu() {
@@ -645,11 +796,22 @@
       );
     }
 
+    function closeAllDropdowns() {
+      document.querySelectorAll(".dropdown.open").forEach(function (el) {
+        el.classList.remove("open");
+        const btn = el.querySelector(".dropbtn");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+      notifyParentHeight();
+    }
+
     function applyFilter(options) {
       const animate = options && options.animate === true;
       const root = document.getElementById("root");
-      const tabs = document.querySelector(".seg-tabs");
       const dir = (options && options.dir) || state.flowDir || "left";
+
+      if (state.swapTimer) { clearTimeout(state.swapTimer); state.swapTimer = null; }
+      if (state.clearTimer) { clearTimeout(state.clearTimer); state.clearTimer = null; }
 
       const swapContent = function () {
         buildTabPool();
@@ -661,17 +823,11 @@
         clearFlowClasses(root);
         renderList();
         if (animate) {
-          // 往右頁籤 → 內容從右側流入；往左則相反
           root.classList.add(dir === "left" ? "flow-in-from-right" : "flow-in-from-left");
-          window.setTimeout(function () {
+          state.clearTimer = window.setTimeout(function () {
             clearFlowClasses(root);
-            if (tabs) tabs.classList.remove("is-flowing");
-            state.animating = false;
             notifyParentHeight();
-          }, 520);
-        } else {
-          if (tabs) tabs.classList.remove("is-flowing");
-          state.animating = false;
+          }, 380);
         }
         syncTabPill();
         notifyParentHeight();
@@ -682,17 +838,15 @@
         return;
       }
 
-      state.animating = true;
-      if (tabs) tabs.classList.add("is-flowing");
       clearFlowClasses(root);
-      // 往歷年活動：舊內容往左流走；回來 Coming Soon：往右流走
       root.classList.add(dir === "left" ? "flow-out-left" : "flow-out-right");
-      window.setTimeout(swapContent, 300);
+      state.swapTimer = window.setTimeout(swapContent, 200);
     }
 
     function setTab(tab) {
       const next = tab === "past" ? "past" : "coming";
-      if (next === state.tab || state.animating) return;
+      if (next === state.tab) return;
+      closeAllDropdowns();
       const dir = next === "past" ? "left" : "right";
       state.flowDir = dir;
       state.tab = next;
@@ -721,7 +875,7 @@
       if (!state.filtered.length) {
         root.innerHTML = '<div class="status">' + emptyMessage() + "</div>";
         pager.hidden = true;
-        notifyParentHeight();
+        requestAnimationFrame(notifyParentHeight);
         return;
       }
 
@@ -731,9 +885,11 @@
         return (
           "<li>" +
             dateBadgeHtml(ev) +
-            "<h4><a href=\"" + escapeHtml(ev.link) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" +
-              escapeHtml(ev.title) + "</a></h4>" +
-            "<p>" + escapeHtml(detailText(ev)) + "</p>" +
+            '<div class="act-body">' +
+              "<h4><a href=\"" + escapeHtml(ev.link) + "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"" + escapeHtml(ev.title) + "（另開新視窗）\">" +
+                escapeHtml(ev.title) + "</a></h4>" +
+              detailHtml(ev) +
+            "</div>" +
           "</li>"
         );
       }).join("") + "</ul>";
@@ -743,16 +899,30 @@
       document.getElementById("prevBtn").disabled = state.page <= 1;
       document.getElementById("nextBtn").disabled = state.page >= pages;
       document.getElementById("rowsBtn").textContent = "一頁" + state.rows + "筆";
+      document.querySelectorAll("#rowsMenu a").forEach(function (el) {
+        el.classList.toggle("active", Number(el.getAttribute("data-rows")) === state.rows);
+      });
       requestAnimationFrame(function () {
         notifyParentHeight();
         setTimeout(notifyParentHeight, 120);
       });
     }
 
-    document.querySelector(".seg-tabs").addEventListener("click", function (e) {
+    /* 頁籤點擊與鍵盤左右切換 */
+    const segTabsEl = document.querySelector(".seg-tabs");
+    segTabsEl.addEventListener("click", function (e) {
       const btn = e.target.closest("button[data-tab]");
       if (!btn) return;
       setTab(btn.getAttribute("data-tab"));
+    });
+    segTabsEl.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        const next = state.tab === "coming" ? "past" : "coming";
+        setTab(next);
+        const target = segTabsEl.querySelector('button[data-tab="' + next + '"]');
+        if (target) target.focus();
+      }
     });
 
     document.getElementById("monthMenu").addEventListener("click", function (e) {
@@ -769,6 +939,7 @@
         ? state.tabPool.slice()
         : state.tabPool.filter(function (ev) { return ymKey(ev) === state.month; });
       state.page = 1;
+      closeAllDropdowns();
       renderList();
     });
 
@@ -778,6 +949,7 @@
       e.preventDefault();
       state.rows = Number(a.getAttribute("data-rows")) || 10;
       state.page = 1;
+      closeAllDropdowns();
       renderList();
     });
 
@@ -791,20 +963,40 @@
 
     ["monthDropdown", "rowsDropdown"].forEach(function (id) {
       const el = document.getElementById(id);
-      el.querySelector(".dropbtn").addEventListener("click", function (e) {
+      const btn = el.querySelector(".dropbtn");
+      btn.addEventListener("click", function (e) {
         e.stopPropagation();
-        el.classList.toggle("open");
+        const willOpen = !el.classList.contains("open");
+        closeAllDropdowns();
+        if (willOpen) {
+          el.classList.add("open");
+          btn.setAttribute("aria-expanded", "true");
+          notifyParentHeight();
+        }
       });
     });
-    document.addEventListener("click", function () {
-      document.querySelectorAll(".dropdown.open").forEach(function (el) {
-        el.classList.remove("open");
-      });
+    document.addEventListener("click", closeAllDropdowns);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeAllDropdowns();
     });
+
     window.addEventListener("resize", function () {
       syncTabPill();
       notifyParentHeight();
     });
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(function () {
+        syncTabPill();
+        notifyParentHeight();
+      });
+      ro.observe(document.getElementById("mainContainer"));
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        syncTabPill();
+        notifyParentHeight();
+      });
+    }
 
     document.getElementById("root").innerHTML = '<div class="status">載入活動資料中…</div>';
     requestAnimationFrame(syncTabPill);
